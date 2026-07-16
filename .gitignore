@@ -70,3 +70,7 @@ logs/
 tmp/
 temp/
 .cache/
+
+# Backup directories with sensitive data
+v1_backup/
+raw_assets/
