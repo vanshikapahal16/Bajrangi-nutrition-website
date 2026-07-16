@@ -32,7 +32,117 @@ export default function PromoCarousel({
     });
   };
 
-  const bestSellers = products.filter(p => p.isBestseller);
+  const fallbackBestsellers = [
+    {
+      id: "prod-whey-isolate",
+      name: "Bajrangi Nutrition Whey Isolate",
+      category: "Protein" as const,
+      description: "Premium pure Whey Protein Isolate.",
+      price: 5499,
+      originalPrice: 6999,
+      image: "/assets/Screenshot 2026-07-16 160658.png",
+      stock: 12,
+      sold: 150,
+      isRunning: true,
+      isBestseller: true,
+      weight: "2 kg",
+      servings: "60 Servings",
+      flavor: "Chocolate Flavour",
+      isVeg: true
+    },
+    {
+      id: "prod-pre-workout",
+      name: "Bajrangi Nutrition Pre-Workout",
+      category: "Pre-Workout" as const,
+      description: "High-octane energy booster.",
+      price: 1899,
+      originalPrice: 2499,
+      image: "/assets/Screenshot 2026-07-16 160708.png",
+      stock: 8,
+      sold: 90,
+      isRunning: true,
+      isBestseller: true,
+      weight: "300 g",
+      servings: "30 Servings",
+      flavor: "Fruit Punch",
+      isVeg: true
+    },
+    {
+      id: "prod-creatine",
+      name: "Bajrangi Nutrition Creatine",
+      category: "Creatine" as const,
+      description: "100% pure micronized creatine monohydrate.",
+      price: 899,
+      originalPrice: 1299,
+      image: "/assets/Screenshot 2026-07-16 160717.png",
+      stock: 25,
+      sold: 240,
+      isRunning: true,
+      isBestseller: true,
+      weight: "100 g",
+      servings: "33 Servings",
+      flavor: "Unflavoured",
+      isVeg: true
+    },
+    {
+      id: "prod-liver50",
+      name: "Bajrangi Liver-50 Protection",
+      category: "Vitamins" as const,
+      description: "Advanced clinically-dosed liver detoxifier.",
+      price: 999,
+      originalPrice: 1499,
+      image: "/assets/Screenshot 2026-07-16 160724.png",
+      stock: 40,
+      sold: 80,
+      isRunning: true,
+      isBestseller: true,
+      weight: "60 Tablets",
+      servings: "60 Servings",
+      flavor: "Unflavoured",
+      isVeg: true
+    },
+    {
+      id: "prod-shaker",
+      name: "Bajrangi Classic Shaker",
+      category: "Accessories" as const,
+      description: "Leak-proof shaker bottle.",
+      price: 399,
+      originalPrice: 599,
+      image: "/assets/Screenshot 2026-07-16 160732.png",
+      stock: 50,
+      sold: 310,
+      isRunning: true,
+      isBestseller: true,
+      weight: "700 ml",
+      servings: "N/A",
+      flavor: "Orange/Black",
+      isVeg: false
+    }
+  ];
+
+  const displayProducts = products.map(p => {
+    if (p.id === "prod-whey-isolate" || p.name.toLowerCase().includes("isolate")) {
+      return { ...p, isBestseller: true, image: "/assets/Screenshot 2026-07-16 160658.png" };
+    }
+    if (p.id === "prod-pre-workout" || p.name.toLowerCase().includes("pre-workout")) {
+      return { ...p, isBestseller: true, image: "/assets/Screenshot 2026-07-16 160708.png" };
+    }
+    if (p.id === "prod-creatine" || p.name.toLowerCase().includes("creatine")) {
+      return { ...p, isBestseller: true, image: "/assets/Screenshot 2026-07-16 160717.png" };
+    }
+    if (p.id === "prod-liver50" || p.name.toLowerCase().includes("liver")) {
+      return { ...p, isBestseller: true, image: "/assets/Screenshot 2026-07-16 160724.png" };
+    }
+    if (p.id === "prod-shaker" || p.name.toLowerCase().includes("shaker")) {
+      return { ...p, isBestseller: true, image: "/assets/Screenshot 2026-07-16 160732.png" };
+    }
+    return p;
+  });
+
+  let bestSellers = displayProducts.filter(p => p.isBestseller);
+  if (bestSellers.length === 0) {
+    bestSellers = fallbackBestsellers;
+  }
 
   const handleCardClick = (productId: string) => {
     const catalogSection = document.getElementById("catalog-section");
