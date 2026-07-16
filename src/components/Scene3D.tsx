@@ -65,9 +65,9 @@ export default function Scene3D({ activeCategory = "all" }: Scene3DProps) {
         <SupplementJar3D
           category="Protein"
           image="/assets/whey_isolate.png"
-          position={[0, -0.25, 0]}
+          position={[0, -0.7, 0]}
           rotation={[0.05, -Math.PI / 12, 0]}
-          scale={1.55}
+          scale={1.15}
           hovered={hovered}
         />
       </group>
