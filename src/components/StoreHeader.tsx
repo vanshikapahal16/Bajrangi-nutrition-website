@@ -3,13 +3,10 @@
 import { useState, useEffect } from "react";
 import {
   Search,
-  User,
   Heart,
   ShoppingBag,
   Menu,
-  X,
-  UserCheck,
-  Zap
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,136 +58,134 @@ export default function StoreHeader({
 
   return (
     <>
-      {/* Floating Tactical HUD Navbar */}
+      {/* Completely transparent borderless header wrapper */}
       <header
-        className={`sticky top-4 z-50 w-[calc(100%-2rem)] mx-auto transition-all duration-500 rounded-2xl border ${
-          isScrolled
-            ? "bg-white/90 backdrop-blur-md border-gray-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.06),0_0_20px_rgba(242,106,33,0.04)] py-1.5"
-            : "bg-white/60 backdrop-blur-sm border-gray-150 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.02)]"
+        className={`sticky top-0 z-50 w-full transition-all duration-500 py-5 ${
+          isScrolled ? "bg-white/70 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.01)]" : "bg-transparent"
         }`}
       >
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-[64px] flex items-center justify-between gap-4">
+        <div className="max-w-[1920px] mx-auto px-6 sm:px-10">
+          <div className="flex items-center justify-between gap-6">
             
-            {/* Logo - Glowing Box Button */}
+            {/* 1. Left Section: Logo - Clean & floating */}
             <a 
               href="#" 
-              className="flex items-center gap-3 p-1.5 bg-white/40 border border-gray-150/80 hover:border-primary/50 hover:bg-white rounded-xl transition-all duration-500 group hover:shadow-[0_0_15px_rgba(242,106,33,0.12)] shrink-0"
+              className="flex items-center gap-3 group shrink-0"
             >
-              <div className="w-10 h-10 rounded-lg bg-white p-1 transition-transform group-hover:scale-105 duration-300">
+              <div className="w-11 h-11 rounded-full bg-white/70 border border-gray-150 p-1.5 transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(242,106,33,0.15)] group-hover:border-primary/50">
                 <img
                   src="/assets/logo.png"
                   alt="Bajrangi Nutrition"
                   className="w-full h-full object-contain"
                 />
               </div>
-              <div className="hidden sm:flex flex-col leading-none pr-1">
-                <span className="font-extrabold text-[13px] tracking-tight text-text-main group-hover:text-primary transition-colors duration-300">
+              <div className="hidden sm:flex flex-col leading-none">
+                <span className="font-extrabold text-[14px] tracking-tight text-text-main group-hover:text-primary transition-colors duration-300">
                   BAJRANGI
                 </span>
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary mt-0.5 text-neon-glow">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary mt-0.5">
                   Nutrition
                 </span>
               </div>
             </a>
 
-            {/* Desktop Navigation - Futuristic Box Buttons */}
-            <nav className="hidden xl:flex items-center gap-3">
-              {MAIN_NAV.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="px-4 py-2 border border-gray-150/40 bg-white/20 hover:bg-white hover:border-primary/50 text-[10px] font-black uppercase tracking-widest text-text-main hover:text-primary rounded-xl transition-all duration-300 hover:shadow-[0_4px_12px_rgba(242,106,33,0.1)] hover:-translate-y-0.5 cursor-pointer relative overflow-hidden group"
-                >
-                  <span className="relative z-10">{item.label}</span>
-                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </a>
-              ))}
-            </nav>
-
-            {/* Search Bar - High Tech Box Style */}
-            <div
-              className={`hidden md:flex items-center transition-all duration-500 ${
-                searchFocused ? "w-80" : "w-56"
-              }`}
-            >
-              <div
-                className={`relative w-full flex items-center bg-bg-light/80 rounded-xl px-4 py-2.5 border transition-all duration-500 ${
-                  searchFocused
-                    ? "border-primary/50 bg-white shadow-[0_0_15px_rgba(242,106,33,0.1)]"
-                    : "border-gray-150/50 hover:border-gray-250"
-                }`}
-              >
-                <Search className={`w-3.5 h-3.5 text-text-muted shrink-0 transition-colors duration-300 ${searchFocused ? "text-primary" : ""}`} />
-                <input
-                  type="text"
-                  placeholder="Search store..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  className="w-full bg-transparent ml-2.5 text-xs text-text-main placeholder:text-text-muted outline-none font-bold uppercase tracking-wider"
-                />
-              </div>
+            {/* 2. Center Section: Floating Navigation Capsule */}
+            <div className="hidden xl:flex items-center justify-center">
+              <nav className="bg-white/75 backdrop-blur-md border border-gray-150/80 px-6 py-2.5 rounded-full flex items-center gap-8 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
+                {MAIN_NAV.map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="text-[10px] font-black uppercase tracking-[0.15em] text-text-main hover:text-primary transition-colors duration-300 relative py-1 nav-link"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
             </div>
 
-            {/* Action Box Buttons */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* 3. Right Section: Search & Actions */}
+            <div className="flex items-center gap-3.5 shrink-0">
+              
+              {/* Search Bar - Capsule Style */}
+              <div
+                className={`hidden md:flex items-center transition-all duration-500 ${
+                  searchFocused ? "w-64" : "w-44"
+                }`}
+              >
+                <div
+                  className={`relative w-full flex items-center bg-white/70 backdrop-blur-sm rounded-full px-4 py-2 border transition-all duration-500 ${
+                    searchFocused
+                      ? "border-primary/40 bg-white shadow-[0_0_15px_rgba(242,106,33,0.06)]"
+                      : "border-gray-150/60 hover:border-gray-250"
+                  }`}
+                >
+                  <Search className={`w-3.5 h-3.5 text-text-muted shrink-0 transition-colors duration-300 ${searchFocused ? "text-primary" : ""}`} />
+                  <input
+                    type="text"
+                    placeholder="Search store..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                    className="w-full bg-transparent ml-2 text-[10px] text-text-main placeholder:text-text-muted outline-none font-bold uppercase tracking-wider"
+                  />
+                </div>
+              </div>
+
+              {/* Admin Button - Glowing Orange Capsule (Matches reference 'ADMIN') */}
               <button
                 onClick={onOpenAdmin}
-                className="hidden lg:flex w-10 h-10 rounded-xl border border-gray-150/40 bg-white/20 hover:bg-white hover:border-primary/50 items-center justify-center text-text-muted hover:text-primary hover:shadow-[0_4px_12px_rgba(242,106,33,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+                className="hidden lg:flex px-4 py-2 rounded-full border border-primary/30 bg-white/70 hover:bg-white hover:border-primary text-[9px] font-black uppercase tracking-widest text-primary shadow-sm hover:shadow-[0_0_12px_rgba(242,106,33,0.15)] transition-all duration-300 hover:-translate-y-0.5 cursor-pointer shrink-0"
                 title="Admin Panel"
               >
-                <UserCheck className="w-[16px] h-[16px]" />
+                ADMIN
               </button>
 
-              <button
-                className="w-10 h-10 rounded-xl border border-gray-150/40 bg-white/20 hover:bg-white hover:border-primary/50 items-center justify-center text-text-muted hover:text-primary hover:shadow-[0_4px_12px_rgba(242,106,33,0.1)] hover:-translate-y-0.5 transition-all duration-300"
-                title="Account"
-              >
-                <User className="w-[16px] h-[16px]" />
-              </button>
-
+              {/* Wishlist Icon - Glass Circle */}
               <button
                 onClick={onOpenWishlist}
-                className="relative w-10 h-10 rounded-xl border border-gray-150/40 bg-white/20 hover:bg-white hover:border-primary/50 items-center justify-center text-text-muted hover:text-primary hover:shadow-[0_4px_12px_rgba(242,106,33,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+                className="relative w-9 h-9 rounded-full border border-gray-150 bg-white/70 hover:bg-white hover:border-primary/50 flex items-center justify-center text-text-muted hover:text-primary hover:shadow-[0_4px_12px_rgba(242,106,33,0.08)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
                 title="Wishlist"
               >
-                <Heart className="w-[16px] h-[16px]" />
+                <Heart className="w-3.5 h-3.5" />
                 {isClient && wishlistCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-lg bg-primary text-white text-[9px] font-black flex items-center justify-center border border-white shadow-sm text-neon-glow"
+                    className="absolute -top-1 -right-1 w-[16px] h-[16px] rounded-full bg-primary text-white text-[8px] font-black flex items-center justify-center border border-white shadow-sm"
                   >
                     {wishlistCount}
                   </motion.span>
                 )}
               </button>
 
+              {/* Cart Button - Glowing Black Capsule (Matches reference 'JOIN') */}
               <button
                 onClick={onOpenCart}
-                className="relative w-10 h-10 rounded-xl border border-gray-150/40 bg-white/20 hover:bg-white hover:border-primary/50 items-center justify-center text-text-muted hover:text-primary hover:shadow-[0_4px_12px_rgba(242,106,33,0.1)] hover:-translate-y-0.5 transition-all duration-300"
+                className="px-4 py-2 rounded-full border border-black bg-white/75 hover:bg-white hover:border-black hover:shadow-[0_0_12px_rgba(0,0,0,0.1)] text-[9px] font-black uppercase tracking-widest text-black flex items-center gap-1.5 hover:-translate-y-0.5 transition-all duration-300 relative cursor-pointer shrink-0"
                 title="Cart"
               >
-                <ShoppingBag className="w-[16px] h-[16px]" />
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>CART</span>
                 {isClient && cartCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-lg bg-primary text-white text-[9px] font-black flex items-center justify-center border border-white shadow-sm animate-pulse text-neon-glow"
+                    className="w-4 h-4 rounded-full bg-primary text-white text-[8px] font-black flex items-center justify-center shadow-sm"
                   >
                     {cartCount}
                   </motion.span>
                 )}
               </button>
 
+              {/* Mobile Menu trigger */}
               <button
                 onClick={() => setMobileOpen(true)}
-                className="xl:hidden w-10 h-10 rounded-xl border border-gray-150/40 bg-white/20 hover:bg-white hover:border-primary/50 flex items-center justify-center text-text-main transition-all duration-300"
+                className="xl:hidden w-9 h-9 rounded-full border border-gray-150 bg-white/70 hover:bg-white flex items-center justify-center text-text-main transition-all duration-300"
                 aria-label="Open menu"
               >
-                <Menu className="w-[18px] h-[18px]" />
+                <Menu className="w-4 h-4" />
               </button>
             </div>
             
