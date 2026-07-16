@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ScrollProvider from "../components/ScrollProvider";
 
 export const metadata: Metadata = {
   title: "Bajrangi Nutrition Kurukshetra | Premium Proteins, Supplements & Vitamins",
@@ -19,9 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="bg-white text-text-main font-sans min-h-screen antialiased">
-        {children}
+    <html lang="en">
+      <body className="bg-white text-text-main font-sans min-h-screen antialiased noise-bg">
+        <ScrollProvider>
+          {children}
+        </ScrollProvider>
       </body>
     </html>
   );

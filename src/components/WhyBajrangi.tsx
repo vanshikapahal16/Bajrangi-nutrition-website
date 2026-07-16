@@ -222,12 +222,16 @@ export default function WhyBajrangi() {
             <motion.div 
               key={idx}
               variants={cardVariants}
-              className="bg-white/80 border border-gray-150 rounded-2xl p-7 flex flex-col justify-between min-h-[280px] relative overflow-hidden shadow-sm hover:shadow-md apple-shadow apple-shadow-hover transition-all duration-300"
+              whileHover={{ y: -10 }}
+              className="bg-white border border-gray-150/80 rounded-3xl p-7 flex flex-col justify-between min-h-[290px] relative overflow-hidden group shadow-sm hover:shadow-[0_20px_45px_rgba(242,106,33,0.1)] border-neon-glow transition-shadow duration-500 cursor-default z-10"
             >
-              <div>
+              {/* Inner ambient glow layer */}
+              <div className="absolute inset-0 bg-radial-glow opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+              <div className="relative z-10">
                 {/* Badge */}
                 <div className="flex justify-between items-center mb-6">
-                  <div className="w-11 h-11 bg-neutral-50 border border-gray-200 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
                     {item.icon}
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted border border-gray-200 bg-neutral-50 px-2.5 py-1 rounded-md">
@@ -235,7 +239,7 @@ export default function WhyBajrangi() {
                   </span>
                 </div>
 
-                <h3 className="text-lg font-bold text-text-main tracking-tight mb-2 uppercase font-sans">
+                <h3 className="text-lg font-black text-text-main tracking-tight mb-2.5 uppercase font-sans">
                   {item.title}
                 </h3>
                 <p className="text-text-muted text-xs sm:text-[13px] leading-relaxed">
@@ -243,7 +247,7 @@ export default function WhyBajrangi() {
                 </p>
               </div>
 
-              {/* Orange outline accent on bottom right */}
+              {/* Orange corner accent */}
               <div className="absolute bottom-0 right-0 w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-transparent to-primary/20 pointer-events-none" />
             </motion.div>
           ))}

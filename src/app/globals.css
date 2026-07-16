@@ -412,6 +412,147 @@ body {
   transition: all 0.3s ease;
 }
 .btn-buy-now:hover {
-  background: #0F5D3F;
-  box-shadow: 0 4px 16px rgba(15, 93, 63, 0.3);
+  background: #F26A21;
+  box-shadow: 0 4px 16px rgba(242, 106, 33, 0.3);
 }
+
+/* Lenis Smooth Scroll Configuration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Subtle Futuristic Noise Texture Overlay */
+.noise-bg {
+  position: relative;
+}
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Ambient Radial Glow and Neon Gradients */
+.bg-radial-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(242, 106, 33, 0.06) 0%, transparent 70%);
+}
+
+.text-neon-glow {
+  text-shadow: 0 0 10px rgba(242, 106, 33, 0.3), 0 0 20px rgba(242, 106, 33, 0.1);
+}
+
+.border-neon-glow {
+  box-shadow: 0 0 15px rgba(242, 106, 33, 0.1), inset 0 0 8px rgba(242, 106, 33, 0.05);
+  border-color: rgba(242, 106, 33, 0.2) !important;
+}
+
+.border-neon-glow:hover {
+  box-shadow: 0 0 25px rgba(242, 106, 33, 0.25), inset 0 0 12px rgba(242, 106, 33, 0.1);
+  border-color: rgba(242, 106, 33, 0.45) !important;
+}
+
+/* Button Custom Animations */
+.btn-futuristic-primary {
+  background: linear-gradient(135deg, #F26A21 0%, #D95A18 100%);
+  box-shadow: 0 4px 20px rgba(242, 106, 33, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+.btn-futuristic-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-futuristic-primary:hover::before {
+  left: 150%;
+}
+.btn-futuristic-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(242, 106, 33, 0.45), 0 0 10px rgba(242, 106, 33, 0.2);
+}
+.btn-futuristic-primary:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.btn-futuristic-secondary {
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(242, 106, 33, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-futuristic-secondary:hover {
+  background: rgba(10, 10, 10, 0.95);
+  border-color: rgba(242, 106, 33, 0.6);
+  box-shadow: 0 8px 24px rgba(242, 106, 33, 0.2);
+  transform: translateY(-2px);
+}
+.btn-futuristic-secondary:active {
+  transform: translateY(0);
+}
+
+/* Card Depth Shadows */
+.futuristic-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(17, 17, 17, 0.05);
+  box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.01);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.futuristic-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 30px 60px -20px rgba(242, 106, 33, 0.12), 0 0 25px rgba(242, 106, 33, 0.05);
+  border-color: rgba(242, 106, 33, 0.2);
+}
+
+/* Smooth Cursor follow glow */
+.cursor-glow {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(242, 106, 33, 0.04) 0%, transparent 70%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  filter: blur(20px);
+  transition: opacity 0.5s ease;
+}
+
+/* Layout section animations */
+.transition-mask {
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+
+.text-reveal-mask {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+}
+

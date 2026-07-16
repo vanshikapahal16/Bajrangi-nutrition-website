@@ -683,7 +683,6 @@ export default function ProductCatalog({
                   {/* Trust Badges */}
                   <div className="hidden lg:flex items-center gap-4 text-[9px] font-extrabold uppercase tracking-widest text-text-muted border-l border-gray-200 pl-4">
                     <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-primary" /> 100% Genuine</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-primary" /> Instant KUK Delivery</span>
                   </div>
                 </div>
               </div>
@@ -691,7 +690,6 @@ export default function ProductCatalog({
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </section>
   );
@@ -717,6 +715,9 @@ function ProductCard({
 }) {
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
   const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
   const saved = product.originalPrice - product.price;
   const outOfStock = product.stock <= 0;
@@ -725,13 +726,13 @@ function ProductCard({
   const benefits = getCategoryBenefits(product.category).slice(0, 2);
 
   let stockText = "In Stock";
-  let stockClass = "text-green-700 bg-green-50 border-green-200";
+  let stockClass = "text-green-700 bg-green-500/10 border-green-500/20";
   if (outOfStock) {
     stockText = "Out of Stock";
-    stockClass = "text-red-600 bg-red-50 border-red-200";
+    stockClass = "text-red-500 bg-red-500/10 border-red-500/20 animate-pulse";
   } else if (product.stock <= 4) {
     stockText = `Only ${product.stock} left`;
-    stockClass = "text-amber-700 bg-amber-50 border-amber-200";
+    stockClass = "text-orange-500 bg-orange-500/10 border-orange-500/20";
   }
 
   const handleShare = async (e: React.MouseEvent) => {
@@ -746,202 +747,224 @@ function ProductCard({
     }
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: x * 10, y: -y * 10 });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
+
   return (
     <motion.div 
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: (index % 3) * 0.1 }}
-      className="premium-glass-card rounded-3xl p-5 lg:p-6 flex flex-col relative overflow-hidden group shine-sweep"
+      transition={{ duration: 0.6, delay: (index % 3) * 0.1, ease: [0.16, 1, 0.3, 1] }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setIsHovered(true)}
+      style={{
+        transform: `perspective(1000px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
+        transition: isHovered ? "none" : "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
+      }}
+      className="futuristic-card rounded-3xl p-5 lg:p-6 flex flex-col relative overflow-hidden group border-neon-glow"
     >
+      {/* Glow aura inside the card on hover */}
+      <div 
+        className="absolute inset-0 pointer-events-none transition-opacity duration-500 opacity-0 group-hover:opacity-100 z-0"
+        style={{
+          background: `radial-gradient(circle 120px at ${tilt.x * 20 + 50}% ${-tilt.y * 20 + 50}%, rgba(242, 106, 33, 0.08) 0%, transparent 100%)`
+        }}
+      />
+
       {/* Badges */}
-      <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5">
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5 pointer-events-none">
         {product.isRunning && (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 bg-primary text-white rounded-full">Best Seller</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 bg-gradient-to-r from-primary to-orange-500 text-white rounded-full shadow-[0_4px_12px_rgba(242,106,33,0.25)]">
+            Best Seller
+          </span>
         )}
         {product.bundleDeal && (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 bg-cta-green text-white rounded-full">New Offer</span>
-        )}
-        {!product.isRunning && !product.bundleDeal && product.sold > 50 && (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 bg-luxury-black text-gold rounded-full">Popular</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 bg-black text-white border border-primary/40 rounded-full">
+            Special Deal
+          </span>
         )}
       </div>
 
-      {/* Wishlist + Share */}
+      {/* Action Buttons: Wishlist & Share */}
       <div className="absolute top-4 right-4 z-10 flex gap-2">
         <button
           onClick={(e) => { e.stopPropagation(); onToggleWishlist(product.id); }}
-          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
-            isWishlisted ? "bg-red-500 border-red-500 text-white" : "bg-white/80 border-gray-200 text-text-muted hover:text-red-500"
+          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-300 ${
+            isWishlisted 
+              ? "bg-primary border-primary text-white shadow-[0_4px_12px_rgba(242,106,33,0.35)]" 
+              : "bg-white/80 border-gray-150 text-text-muted hover:text-primary hover:border-primary/40"
           }`}
           title="Wishlist"
         >
-          <Heart className={`w-4 h-4 ${isWishlisted ? "fill-white" : ""}`} />
+          <Heart className={`w-4 h-4 transition-transform duration-300 group-hover:scale-110 ${isWishlisted ? "fill-white animate-pulse" : ""}`} />
         </button>
         <button
           onClick={handleShare}
-          className="w-9 h-9 rounded-full bg-white/80 border border-gray-200 flex items-center justify-center text-text-muted hover:text-primary transition-all"
+          className="w-9 h-9 rounded-full bg-white/80 border border-gray-150 flex items-center justify-center text-text-muted hover:text-primary hover:border-primary/40 transition-all duration-300"
           title="Share"
         >
           <Share2 className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Product Image */}
+      {/* Product Image Box */}
       <button
         type="button"
         onClick={() => onOpenShowcase(product)}
-        className="bg-white/60 rounded-2xl h-52 lg:h-56 flex items-center justify-center p-6 mb-5 relative overflow-hidden"
+        className="bg-bg-light/60 rounded-2xl h-52 lg:h-56 flex items-center justify-center p-6 mb-5 relative overflow-hidden z-10"
       >
+        <div className="absolute inset-0 bg-radial-glow opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <img
           src={product.image}
           alt={product.name}
-          className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-md"
+          className="max-h-full max-w-full object-contain transition-transform duration-700 group-hover:scale-110 group-hover:rotate-1 filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.06)] group-hover:drop-shadow-[0_12px_24px_rgba(242,106,33,0.18)]"
         />
       </button>
 
-      {/* Brand + Category */}
-      <div className="flex items-center gap-2 mb-3">
-        <img src="/assets/logo.png" alt="" className="w-6 h-6 object-contain rounded-full" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{product.category}</span>
-        <span className="text-[10px] text-text-muted">• Authorized Brand</span>
-      </div>
+      {/* Info Stack */}
+      <div className="relative z-10 space-y-3 flex-grow flex flex-col">
+        {/* Category tag */}
+        <div className="flex items-center gap-2">
+          <img src="/assets/logo.png" alt="" className="w-5 h-5 object-contain rounded-full border border-gray-200" />
+          <span className="text-[9px] font-bold uppercase tracking-widest text-primary text-neon-glow">{product.category}</span>
+          <span className="text-[9px] text-text-muted font-bold tracking-wider uppercase">• Auth Seal</span>
+        </div>
 
-      {/* Name */}
-      <h4 className="text-base font-extrabold text-text-main leading-snug tracking-tight line-clamp-2 mb-2 group-hover:text-cta-green transition-colors">
-        {product.name}
-      </h4>
+        {/* Product Name */}
+        <h4 
+          onClick={() => onOpenShowcase(product)}
+          className="text-[15px] font-black text-text-main leading-snug tracking-tight line-clamp-2 cursor-pointer hover:text-primary transition-colors duration-300 uppercase font-sans"
+        >
+          {product.name}
+        </h4>
 
-      {/* Description */}
-      <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2 mb-3">
-        {product.description}
-      </p>
-
-      {/* Benefits */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {benefits.map((b) => (
-          <span key={b.name} className="text-[9px] font-semibold text-text-muted bg-white/70 border border-gray-100 px-2 py-0.5 rounded-full">
-            {b.name}
-          </span>
-        ))}
-      </div>
-
-      {/* Ingredients */}
-      <div className="text-[10px] text-text-muted mb-3 space-y-0.5">
-        <span className="font-bold text-text-main uppercase tracking-wider text-[9px]">Key Ingredients</span>
-        {ingredients.map((ing) => (
-          <p key={ing.name} className="line-clamp-1">• {ing.name}</p>
-        ))}
-      </div>
-
-      {/* Flavor & Weight */}
-      <div className="flex flex-wrap gap-3 text-[10px] mb-3">
-        {product.flavor && (
-          <span className="text-text-muted"><strong className="text-text-main">Flavor:</strong> {product.flavor}</span>
-        )}
-        {product.weight && (
-          <span className="text-text-muted"><strong className="text-text-main">Net Wt:</strong> {product.weight}</span>
-        )}
-      </div>
-
-      {/* Rating */}
-      <div className="flex items-center gap-1.5 mb-4">
-        <div className="flex gap-0.5 text-amber-500">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="w-3 h-3 fill-amber-500 text-amber-500" />
+        {/* Benefits Badges */}
+        <div className="flex flex-wrap gap-1">
+          {benefits.map((b) => (
+            <span key={b.name} className="text-[9px] font-bold uppercase tracking-wide text-text-muted bg-bg-light border border-gray-150 px-2 py-0.5 rounded-full">
+              {b.name}
+            </span>
           ))}
         </div>
-        <span className="text-[11px] font-bold text-text-main">4.9</span>
-        <span className="text-[10px] text-text-muted">(Verified Reviews)</span>
-      </div>
-
-      {/* Pricing */}
-      <div className="bg-white/50 rounded-xl p-3 mb-4 border border-gray-100">
-        <div className="flex items-baseline flex-wrap gap-2">
-          <span className="text-xl font-black text-text-main">₹{product.price.toLocaleString("en-IN")}</span>
-          <span className="text-xs text-text-muted line-through">MRP ₹{product.originalPrice.toLocaleString("en-IN")}</span>
-          <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">{discount}% OFF</span>
+        {/* Specifications snippet */}
+        <div className="flex gap-4 text-[10px] text-text-muted mt-2">
+          {product.flavor && (
+            <span><strong>Flavor:</strong> {product.flavor}</span>
+          )}
+          {product.weight && (
+            <span><strong>Net Wt:</strong> {product.weight}</span>
+          )}
         </div>
-        <p className="text-[10px] text-green-700 font-semibold mt-1">You save ₹{saved.toLocaleString("en-IN")}</p>
-      </div>
 
-      {/* Stock */}
-      <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full border mb-3 w-fit ${stockClass}`}>
-        {stockText}
-      </span>
+        {/* Rating Row */}
+        <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex gap-0.5 text-amber-500">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+            ))}
+          </div>
+          <span className="text-[11px] font-black text-text-main">4.9</span>
+          <span className="text-[9px] text-text-muted font-bold uppercase tracking-wide">(Verified)</span>
+        </div>
 
-      {/* Delivery */}
-      <div className="flex items-center gap-1.5 text-[10px] text-text-muted mb-3">
-        <Truck className="w-3.5 h-3.5 text-primary shrink-0" />
-        <span>Est. delivery: <strong className="text-text-main">1hr (KUK)</strong> / 1–3 days</span>
-      </div>
+        {/* Pricing Block */}
+        <div className="bg-bg-light/60 rounded-xl p-3 border border-gray-150/40 mt-3">
+          <div className="flex items-baseline flex-wrap gap-2">
+            <span className="text-xl font-black text-text-main tracking-tight">₹{product.price.toLocaleString("en-IN")}</span>
+            <span className="text-xs text-text-muted line-through font-medium">MRP ₹{product.originalPrice.toLocaleString("en-IN")}</span>
+            <span className="text-[9px] font-bold text-green-600 bg-green-500/10 border border-green-500/20 px-2.5 py-0.5 rounded-full">{discount}% OFF</span>
+          </div>
+          <p className="text-[10px] text-green-600 font-bold mt-1">Saves ₹{saved.toLocaleString("en-IN")}</p>
+        </div>
 
-      {/* Trust badges */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <span className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
-          <ShieldCheck className="w-3 h-3 text-cta-green" /> 100% Genuine
-        </span>
-        <span className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
-          <Package className="w-3 h-3 text-cta-green" /> Secure Packaging
-        </span>
-      </div>
-
-      {/* Quantity */}
-      {!outOfStock && (
-        <div className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2 mb-4 bg-white/60">
-          <span className="text-[10px] font-bold uppercase text-text-muted">Qty</span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={(e) => { e.stopPropagation(); setQty((q) => Math.max(1, q - 1)); }}
-              className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:border-primary transition-colors"
-            >
-              <Minus className="w-3 h-3" />
-            </button>
-            <span className="text-sm font-bold w-6 text-center">{qty}</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); setQty((q) => Math.min(product.stock, q + 1)); }}
-              className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:border-primary transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-            </button>
+        {/* Badges footer */}
+        <div className="flex flex-col gap-1.5 text-[10px] text-text-muted mt-3">
+          <div className="flex items-center gap-1.5">
+            <Truck className="w-3.5 h-3.5 text-primary" />
+            <span>KUK Doorstep: <strong className="text-text-main font-bold">1 Hour</strong> | India: 2 days</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+            <span className="font-bold text-text-main">FSSAI Certified Import</span>
           </div>
         </div>
-      )}
 
-      {/* Actions */}
-      <div className="grid grid-cols-2 gap-2 mt-auto">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (outOfStock) return;
-            onAddToCart(product, qty);
-            setAddedFeedback(true);
-            setTimeout(() => setAddedFeedback(false), 2000);
-          }}
-          disabled={outOfStock}
-          className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
-            outOfStock
-              ? "bg-gray-100 text-text-muted cursor-not-allowed"
-              : addedFeedback
-              ? "bg-green-600 text-white"
-              : "bg-primary hover:bg-primary-hover text-white shadow-sm hover:shadow-md"
-          }`}
-        >
-          {addedFeedback ? <><Check className="w-3.5 h-3.5" /> Added</> : <><ShoppingCart className="w-3.5 h-3.5" /> Add to Cart</>}
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!outOfStock) onBuyNow(product, qty);
-          }}
-          disabled={outOfStock}
-          className={`btn-buy-now py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-white ${
-            outOfStock ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          Buy Now
-        </button>
+        {/* Stock Alert */}
+        <div className="flex justify-between items-center mt-3">
+          <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${stockClass}`}>
+            {stockText}
+          </span>
+        </div>
+
+        {/* Quantity Selection */}
+        {!outOfStock && (
+          <div className="flex items-center justify-between border border-gray-150 rounded-xl px-3 py-1.5 bg-bg-light/40 mt-3">
+            <span className="text-[9px] font-black uppercase tracking-wider text-text-muted">Quantity</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); setQty((q) => Math.max(1, q - 1)); }}
+                className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors bg-white"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-xs font-bold w-4 text-center">{qty}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setQty((q) => Math.min(product.stock, q + 1)); }}
+                className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors bg-white"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Add and Buy Buttons */}
+        <div className="grid grid-cols-2 gap-2 pt-4 mt-auto">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (outOfStock) return;
+              onAddToCart(product, qty);
+              setAddedFeedback(true);
+              setTimeout(() => setAddedFeedback(false), 2000);
+            }}
+            disabled={outOfStock}
+            className={`flex items-center justify-center gap-1.5 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border ${
+              outOfStock
+                ? "bg-gray-100 border-transparent text-text-muted cursor-not-allowed"
+                : addedFeedback
+                ? "bg-green-600 border-green-600 text-white shadow-[0_4px_12px_rgba(22,163,74,0.3)]"
+                : "bg-white border-primary/30 hover:border-primary text-primary hover:bg-primary/5 shadow-sm"
+            }`}
+          >
+            {addedFeedback ? <><Check className="w-3.5 h-3.5" /> Added</> : <><ShoppingCart className="w-3.5 h-3.5" /> Add</>}
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!outOfStock) onBuyNow(product, qty);
+            }}
+            disabled={outOfStock}
+            className={`btn-futuristic-primary py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-white ${
+              outOfStock ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            Buy Now
+          </button>
+        </div>
       </div>
     </motion.div>
   );

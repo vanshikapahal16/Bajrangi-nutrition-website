@@ -11,6 +11,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Sub-components
 import StoreHeader from "../components/StoreHeader";
@@ -43,6 +44,16 @@ export default function Storefront() {
   const [searchQuery, setSearchQuery] = useState("");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   useEffect(() => {
     setIsClient(true);
     // Load Cart from LocalStorage
@@ -257,93 +268,128 @@ export default function Storefront() {
       <CustomerReviews />
 
       {/* 8. Physical Outlet Map & Hours */}
-      <section className="py-20 bg-bg-light border-t border-gray-100" id="contact-section">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="text-primary font-bold text-xs uppercase tracking-widest">Store Location</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mt-2 mb-4 text-text-main">Visit Bajrangi Outlet</h2>
-            <p className="text-text-muted text-xs sm:text-sm leading-relaxed mb-10 max-w-md">
+      {/* Dynamic cursor following glowing backdrop */}
+      {isClient && (
+        <div 
+          className="cursor-glow hidden md:block" 
+          style={{ left: `${mousePos.x}px`, top: `${mousePos.y}px` }} 
+        />
+      )}
+
+      {/* 8. Physical Outlet Map & Hours */}
+      <section className="py-24 sm:py-32 bg-white border-t border-gray-150 relative" id="contact-section">
+        {/* Background glow overlay */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute top-[20%] left-[10%] w-[350px] h-[350px] rounded-full bg-primary/4 blur-[80px]" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <span className="text-primary font-bold text-xs uppercase tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full inline-block">Store Location</span>
+            <h2 className="text-4xl sm:text-5xl font-black mt-4 mb-4 text-text-main uppercase font-sans tracking-tight">Visit Bajrangi Outlet</h2>
+            <p className="text-text-muted text-xs sm:text-sm leading-relaxed mb-10 max-w-md font-medium">
               Located right near **Kurukshetra University (KUK)**. Taste test products, check FSSAI codes, and talk with our physical trainers.
             </p>
             
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-primary shadow-sm"><MapPin className="w-5 h-5" /></div>
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0"><MapPin className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Store Address</h4>
-                  <p className="text-text-muted text-xs mt-0.5">Bajrangi Nutrition, Pipili Road, Opp. Near New Bus Stand, Kurukshetra, Haryana - 136119</p>
+                  <p className="text-text-muted text-xs mt-1 font-medium">Bajrangi Nutrition, Pipili Road, Opp. Near New Bus Stand, Kurukshetra, Haryana - 136119</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-primary shadow-sm"><Phone className="w-5 h-5" /></div>
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0"><Phone className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">WhatsApp Direct Phone</h4>
-                  <p className="text-text-muted text-xs mt-0.5">+91 95887-15527 | +91 99960-67101</p>
+                  <p className="text-text-muted text-xs mt-1 font-medium">+91 95887-15527 | +91 99960-67101</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-primary shadow-sm"><Clock className="w-5 h-5" /></div>
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0"><Clock className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Working Hours</h4>
-                  <p className="text-text-muted text-xs mt-0.5">Monday - Sunday: 10:00 AM - 9:00 PM (KUK University Delivery 24/7)</p>
+                  <p className="text-text-muted text-xs mt-1 font-medium">Monday - Sunday: 10:00 AM - 9:00 PM (KUK University Delivery 24/7)</p>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Map Frame */}
-          <div className="h-[380px] rounded-3xl overflow-hidden shadow-lg border border-gray-100 relative">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="h-[380px] rounded-3xl overflow-hidden shadow-lg border border-gray-150 relative group"
+          >
             <iframe 
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13791.642533036495!2d76.81268393529237!3d29.967664875323573!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390e3f4251df83df%3A0x6e902cf697b0032b!2sKurukshetra%20University!5e0!3m2!1sen!2sin!4v1721020000000!5m2!1sen!2sin" 
-              className="w-full h-full border-none filter grayscale contrast-110 saturate-50"
+              className="w-full h-full border-none filter grayscale contrast-110 saturate-50 transition-transform duration-700 group-hover:scale-105"
               allowFullScreen
               loading="lazy"
             />
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* 9. Footer */}
-      <footer className="bg-white border-t border-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-gray-100">
+      {/* 9. Redesigned Premium Dark Footer */}
+      <footer className="bg-black text-white py-20 relative overflow-hidden border-t border-white/5">
+        {/* Glow element in footer */}
+        <div className="absolute top-0 left-[20%] w-[350px] h-[350px] rounded-full bg-primary/10 blur-[90px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 pb-16 border-b border-white/10 relative z-10">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <img src="/assets/logo.png" alt="" className="w-8 h-8 object-contain" />
-              <span className="font-extrabold text-sm uppercase tracking-wider text-text-main">Bajrangi Nutrition</span>
+              <div className="w-10 h-10 rounded-full bg-white p-1 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.15)]">
+                <img src="/assets/logo.png" alt="" className="w-full h-full object-contain" />
+              </div>
+              <span className="font-extrabold text-sm uppercase tracking-wider text-white">Bajrangi Nutrition</span>
             </div>
-            <p className="text-text-muted text-xs leading-relaxed max-w-xs">
+            <p className="text-gray-400 text-xs leading-relaxed max-w-xs font-medium">
               Dedicated to supplying premium, brand-authentic proteins, muscle gainers, and vitamins to Kurukshetra university students and local athletes.
             </p>
           </div>
           
           <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Product Classes</h4>
-            <div className="grid grid-cols-2 gap-2 text-xs text-text-muted">
-              <a href="#catalog-section" onClick={() => setActiveCategory("Protein")} className="hover:text-primary">Whey Isolate</a>
-              <a href="#catalog-section" onClick={() => setActiveCategory("Pre-Workout")} className="hover:text-primary">Pre-Workouts</a>
-              <a href="#catalog-section" onClick={() => setActiveCategory("Creatine")} className="hover:text-primary">Micronized Creatine</a>
-              <a href="#catalog-section" onClick={() => setActiveCategory("Accessories")} className="hover:text-primary">Shakers & Accessories</a>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white">Product Classes</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 font-medium">
+              <a href="#catalog-section" onClick={() => setActiveCategory("Protein")} className="hover:text-primary transition-colors">Whey Isolate</a>
+              <a href="#catalog-section" onClick={() => setActiveCategory("Pre-Workout")} className="hover:text-primary transition-colors">Pre-Workouts</a>
+              <a href="#catalog-section" onClick={() => setActiveCategory("Creatine")} className="hover:text-primary transition-colors">Micronized Creatine</a>
+              <a href="#catalog-section" onClick={() => setActiveCategory("Accessories")} className="hover:text-primary transition-colors">Shakers & Accessories</a>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Subscribe to stock updates</h4>
-            <p className="text-text-muted text-xs">Join our newsletter to receive notifications on brand restocks and Badam Ragda discount vouchers.</p>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white">Subscribe to stock updates</h4>
+            <p className="text-gray-400 text-xs font-medium">Join our newsletter to receive notifications on brand restocks and Badam Ragda discount vouchers.</p>
             <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); triggerToast("Subscribed successfully!", "success"); }}>
-              <input type="email" required placeholder="Email address" className="bg-bg-light border border-gray-200 rounded-xl px-4 py-2 text-xs text-text-main outline-none focus:border-primary flex-grow" />
-              <button className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm">Join</button>
+              <input 
+                type="email" 
+                required 
+                placeholder="Email address" 
+                className="bg-neutral-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-primary/50 flex-grow font-medium" 
+              />
+              <button className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all">Join</button>
             </form>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 pt-10 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <p className="text-text-muted text-[10px]">&copy; 2026 Bajrangi Nutrition Kurukshetra. 100% Authentic Seals Verified.</p>
+        <div className="max-w-7xl mx-auto px-6 pt-10 flex flex-col sm:flex-row justify-between items-center gap-6 relative z-10">
+          <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider">&copy; 2026 Bajrangi Nutrition Kurukshetra. 100% Authentic Seals Verified.</p>
           <div className="flex gap-4">
-            <a href="https://instagram.com" target="_blank" className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-text-muted hover:text-primary hover:border-primary hover:bg-white shadow-sm transition-all"><Instagram className="w-4 h-4" /></a>
-            <a href="https://facebook.com" target="_blank" className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-text-muted hover:text-primary hover:border-primary hover:bg-white shadow-sm transition-all"><Facebook className="w-4 h-4" /></a>
-            <a href="https://youtube.com" target="_blank" className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-text-muted hover:text-primary hover:border-primary hover:bg-white shadow-sm transition-all"><Youtube className="w-4 h-4" /></a>
+            <a href="https://instagram.com" target="_blank" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Instagram className="w-4 h-4" /></a>
+            <a href="https://facebook.com" target="_blank" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Facebook className="w-4 h-4" /></a>
+            <a href="https://youtube.com" target="_blank" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Youtube className="w-4 h-4" /></a>
           </div>
         </div>
       </footer>
