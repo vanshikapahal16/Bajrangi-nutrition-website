@@ -65,39 +65,9 @@ export default function Scene3D({ activeCategory = "all" }: Scene3DProps) {
         <SupplementJar3D
           category="Protein"
           image="/assets/whey_isolate.png"
-          position={[0, 0.1, 0]}
-          rotation={[0.1, -Math.PI / 8, 0]}
-          scale={1.4}
-          hovered={hovered}
-        />
-
-        {/* 2. Pre-Workout Canister (Front-Left, shorter) */}
-        <SupplementJar3D
-          category="Pre-Workout"
-          image="/assets/pre_workout.png"
-          position={[-1.3, -0.6, 0.8]}
-          rotation={[0.05, Math.PI / 6, -0.05]}
-          scale={1.05}
-          hovered={hovered}
-        />
-
-        {/* 3. Creatine Canister (Front-Right, shorter) */}
-        <SupplementJar3D
-          category="Creatine"
-          image="/assets/creatine.png"
-          position={[1.2, -0.6, 0.6]}
-          rotation={[0.08, -Math.PI / 6, 0.05]}
-          scale={1.05}
-          hovered={hovered}
-        />
-
-        {/* 4. Branded Shaker Bottle (Back-Right, tall) */}
-        <SupplementJar3D
-          category="Accessories"
-          image="/assets/shaker.png"
-          position={[2.0, -0.2, -0.6]}
-          rotation={[0.15, -Math.PI / 4, 0.05]}
-          scale={1.05}
+          position={[0, -0.25, 0]}
+          rotation={[0.05, -Math.PI / 12, 0]}
+          scale={1.55}
           hovered={hovered}
         />
       </group>
