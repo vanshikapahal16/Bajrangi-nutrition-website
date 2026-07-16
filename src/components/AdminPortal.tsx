@@ -54,6 +54,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
   const [formImageUrl, setFormImageUrl] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [formRunning, setFormRunning] = useState(true);
+  const [formBestseller, setFormBestseller] = useState(false);
   const [formVeg, setFormVeg] = useState(true);
   
   // Multi-Image Gallery State (Array of Base64 or URLs)
@@ -139,7 +140,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
 
   // Stock additions
   const handleAddStock = async (p: Product, amt: number) => {
-    const updated = { ...p, stock: p.stock + amt };
+    const updated = { ...p, stock: p.stock + amt, lastRestocked: new Date().toISOString() };
     try {
       await dataService.saveProduct(updated);
       showToast(`Added ${amt} units of stock to ${p.name}.`, "success");
@@ -213,6 +214,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
       stock: Number(formStock),
       description: formDesc,
       isRunning: formRunning,
+      isBestseller: formBestseller,
       isVeg: formVeg,
       image: formImageUrl || "/assets/whey_isolate.png",
       images: formImages.length > 0 ? formImages : [formImageUrl || "/assets/whey_isolate.png"]
@@ -235,7 +237,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
     try {
       await dataService.saveProduct(payload);
       showToast(editProductId ? "Product updated!" : "Product added to catalog!", "success");
-      
+
       resetForm();
       setActiveTab("inventory");
     } catch (err: any) {
@@ -256,6 +258,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
     setFormImageUrl("");
     setFormDesc("");
     setFormRunning(true);
+    setFormBestseller(false);
     setFormVeg(true);
     setFormImages([]);
     setFormHasBundle(false);
@@ -277,9 +280,10 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
     setFormImageUrl(p.image);
     setFormDesc(p.description);
     setFormRunning(p.isRunning);
+    setFormBestseller(p.isBestseller || false);
     setFormVeg(p.isVeg);
     setFormImages(p.images || [p.image]);
-    
+
     if (p.bundleDeal) {
       setFormHasBundle(true);
       setFormBuyQty(p.bundleDeal.buyQty);
@@ -594,35 +598,54 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                       <tr className="bg-bg-light border-b border-gray-150 font-bold uppercase tracking-wider text-text-muted">
                         <th className="p-4 pl-6">Product Details</th>
                         <th className="p-4">Price</th>
-                        <th className="p-4">Stock</th>
-                        <th className="p-4">Bundle Deal Offer</th>
+                        <th className="p-4">Stock Left</th>
+                        <th className="p-4">Units Sold</th>
+                        <th className="p-4">Last Restocked</th>
+                        <th className="p-4">Bestseller</th>
+                        <th className="p-4">Bundle Deal</th>
                         <th className="p-4 text-right pr-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {products.map(p => (
-                        <tr key={p.id} className="hover:bg-bg-light/40 transition-all">
-                          <td className="p-4 pl-6 font-bold text-text-main">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 bg-bg-light rounded-lg border border-gray-150 flex items-center justify-center p-1">
-                                <img src={p.image} alt="" className="max-h-full max-w-full object-contain" />
+                      {products.map(p => {
+                        const lastRestockedDate = p.lastRestocked ? new Date(p.lastRestocked).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Never";
+                        return (
+                          <tr key={p.id} className="hover:bg-bg-light/40 transition-all">
+                            <td className="p-4 pl-6 font-bold text-text-main">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-bg-light rounded-lg border border-gray-150 flex items-center justify-center p-1">
+                                  <img src={p.image} alt="" className="max-h-full max-w-full object-contain" />
+                                </div>
+                                <div>
+                                  <span className="block leading-tight">{p.name}</span>
+                                  <span className="text-[9px] text-text-muted mt-0.5 font-normal">{p.category} | {p.weight}</span>
+                                </div>
                               </div>
-                              <div>
-                                <span className="block leading-tight">{p.name}</span>
-                                <span className="text-[9px] text-text-muted mt-0.5 font-normal">{p.category} | {p.weight}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4 font-black">₹{p.price.toLocaleString("en-IN")}</td>
-                          <td className="p-4 font-semibold text-text-muted">{p.stock} units</td>
-                          <td className="p-4 font-medium text-green-700">{p.bundleDeal ? p.bundleDeal.label : "None"}</td>
-                          <td className="p-4 text-right pr-6 space-x-1.5">
-                            <button onClick={() => handleEditClick(p)} className="p-2 border border-gray-200 hover:border-primary rounded-lg bg-white text-text-muted hover:text-primary transition-all"><Edit className="w-3.5 h-3.5" /></button>
-                            <button onClick={() => handleAddStock(p, 5)} className="p-2 border border-gray-200 hover:border-primary rounded-lg bg-white text-text-muted hover:text-primary transition-all" title="Add 5 Stock"><Plus className="w-3.5 h-3.5" /></button>
-                            <button onClick={() => handleDeleteProduct(p.id)} className="p-2 border border-gray-200 hover:border-danger rounded-lg bg-white text-text-muted hover:text-danger transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="p-4 font-black">₹{p.price.toLocaleString("en-IN")}</td>
+                            <td className="p-4 font-semibold">
+                              <span className={p.stock <= 4 ? "text-danger" : p.stock <= 10 ? "text-amber-600" : "text-text-muted"}>
+                                {p.stock} units
+                              </span>
+                            </td>
+                            <td className="p-4 font-semibold text-green-600">{p.sold} sold</td>
+                            <td className="p-4 text-text-muted text-[10px]">{lastRestockedDate}</td>
+                            <td className="p-4">
+                              {p.isBestseller ? (
+                                <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-[9px] font-bold uppercase">Yes</span>
+                              ) : (
+                                <span className="text-text-muted text-[9px]">No</span>
+                              )}
+                            </td>
+                            <td className="p-4 font-medium text-green-700 text-[10px]">{p.bundleDeal ? p.bundleDeal.label : "None"}</td>
+                            <td className="p-4 text-right pr-6 space-x-1.5">
+                              <button onClick={() => handleEditClick(p)} className="p-2 border border-gray-200 hover:border-primary rounded-lg bg-white text-text-muted hover:text-primary transition-all"><Edit className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => handleAddStock(p, 5)} className="p-2 border border-gray-200 hover:border-primary rounded-lg bg-white text-text-muted hover:text-primary transition-all" title="Add 5 Stock"><Plus className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => handleDeleteProduct(p.id)} className="p-2 border border-gray-200 hover:border-danger rounded-lg bg-white text-text-muted hover:text-danger transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -756,6 +779,10 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                     <label className="flex items-center gap-2 cursor-pointer font-bold uppercase tracking-wider text-text-muted">
                       <input type="checkbox" checked={formRunning} onChange={(e) => setFormRunning(e.target.checked)} className="w-4 h-4 accent-primary" />
                       Top Featured Running Product
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer font-bold uppercase tracking-wider text-text-muted">
+                      <input type="checkbox" checked={formBestseller} onChange={(e) => setFormBestseller(e.target.checked)} className="w-4 h-4 accent-primary" />
+                      Show in Bestseller Section
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer font-bold uppercase tracking-wider text-text-muted">
                       <input type="checkbox" checked={formVeg} onChange={(e) => setFormVeg(e.target.checked)} className="w-4 h-4 accent-primary" />

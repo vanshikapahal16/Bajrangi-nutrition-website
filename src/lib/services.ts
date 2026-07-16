@@ -31,6 +31,7 @@ export interface Product {
   stock: number;
   sold: number;
   isRunning: boolean;
+  isBestseller?: boolean; // Owner-controlled bestseller toggle for featured section
   weight?: string;
   servings?: string;
   flavor?: string;
@@ -40,6 +41,7 @@ export interface Product {
     freeQty: number;
     label: string;
   };
+  lastRestocked?: string; // Timestamp of last stock addition
   updatedAt?: any;
 }
 

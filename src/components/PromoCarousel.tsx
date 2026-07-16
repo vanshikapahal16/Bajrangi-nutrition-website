@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 import { ChevronLeft, ChevronRight, ShoppingCart, Heart, Eye, Star } from "lucide-react";
 import { Product } from "../lib/services";
 
@@ -32,7 +32,29 @@ export default function PromoCarousel({
     });
   };
 
-  const bestSellers = products.filter(p => p.isRunning || p.sold > 100);
+  const bestSellers = products.filter(p => p.isBestseller);
+
+  const handleCardClick = (productId: string) => {
+    const catalogSection = document.getElementById("catalog-section");
+    if (catalogSection) {
+      catalogSection.scrollIntoView({ behavior: "smooth" });
+      // Store the product ID to highlight it in catalog
+      sessionStorage.setItem("selectedProductId", productId);
+    }
+  };
+
+  const cardVariants = {
+    initial: { y: 0, scale: 1 },
+    hover: {
+      y: -12,
+      scale: 1.02,
+      transition: {
+        type: "spring" as const,
+        stiffness: 300,
+        damping: 20
+      }
+    }
+  };
 
   return (
     <section className="py-16 bg-white overflow-hidden" id="trending-section">
@@ -84,9 +106,13 @@ export default function PromoCarousel({
             else if (product.category === "Vitamins") keyBenefits = "Liver Shield • Advanced Detox";
 
             return (
-              <div 
+              <motion.div
                 key={product.id}
-                className="w-[280px] sm:w-[310px] flex-shrink-0 snap-start bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 relative group flex flex-col justify-between"
+                variants={cardVariants}
+                initial="initial"
+                whileHover="hover"
+                className="w-[280px] sm:w-[310px] flex-shrink-0 snap-start bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 relative group flex flex-col justify-between cursor-pointer"
+                onClick={() => handleCardClick(product.id)}
               >
                 {/* Sale Tag */}
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5">
@@ -98,10 +124,13 @@ export default function PromoCarousel({
 
                 {/* Wishlist Button */}
                 <button
-                  onClick={() => onToggleWishlist(product.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleWishlist(product.id);
+                  }}
                   className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full border flex items-center justify-center transition-all shadow-sm ${
-                    isWishlisted 
-                      ? "bg-red-500 border-red-500 text-white" 
+                    isWishlisted
+                      ? "bg-red-500 border-red-500 text-white"
                       : "bg-white border-gray-250 text-text-muted hover:text-red-500 hover:border-red-200"
                   }`}
                   title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
@@ -169,20 +198,26 @@ export default function PromoCarousel({
                     </div>
 
                     <div className="grid grid-cols-5 gap-2">
-                      <button 
-                        onClick={() => onOpenModal(product)}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenModal(product);
+                        }}
                         className="col-span-1 border border-gray-200 hover:border-primary rounded-xl flex items-center justify-center text-text-muted hover:text-primary transition-all p-2.5 bg-white"
                         title="Specs Quick View"
                       >
                         <Eye className="w-4.5 h-4.5" />
                       </button>
-                      
-                      <button 
-                        onClick={() => onAddToCart(product, 1)}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddToCart(product, 1);
+                        }}
                         disabled={outOfStock}
                         className={`col-span-4 text-xs font-bold uppercase tracking-wider rounded-xl py-2.5 transition-all flex items-center justify-center gap-1.5 ${
-                          outOfStock 
-                            ? "bg-gray-100 border border-gray-200 text-text-muted cursor-not-allowed" 
+                          outOfStock
+                            ? "bg-gray-100 border border-gray-200 text-text-muted cursor-not-allowed"
                             : "bg-primary hover:bg-primary-hover text-white shadow-sm hover:shadow-md"
                         }`}
                       >
@@ -192,7 +227,7 @@ export default function PromoCarousel({
                   </div>
                 </div>
 
-              </div>
+              </motion.div>
             );
           })}
         </div>

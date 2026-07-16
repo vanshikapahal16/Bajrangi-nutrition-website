@@ -1,20 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #FF6B00;
-  --color-primary-hover: #E05200;
-  --color-primary-glow: rgba(255, 107, 0, 0.15);
-  --color-bg-light: #FAF9F6;
+  --color-primary: #F26A21;
+  --color-primary-hover: #D95A18;
+  --color-primary-glow: rgba(242, 106, 33, 0.15);
+  --color-teal: #003C46;
+  --color-cta-green: #0F5D3F;
+  --color-cta-green-hover: #0D4F35;
+  --color-gold: #D4AF37;
+  --color-luxury-black: #0A0A0A;
+  --color-bg-light: #F8F8F8;
   --color-bg-card: #FFFFFF;
   --color-text-main: #111111;
-  --color-text-muted: #666666;
+  --color-text-muted: #555555;
   --font-sans: 'Outfit', sans-serif;
   --font-display: 'Bebas Neue', sans-serif;
 }
 
 :root {
-  --background: #FAF9F6;
+  --background: #FFFFFF;
   --foreground: #111111;
 }
 
@@ -36,12 +41,61 @@ body {
   background: #F1F1F1;
 }
 ::-webkit-scrollbar-thumb {
-  background: #FF6B00;
+  background: #F26A21;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #E05200;
+  background: #D95A18;
 }
+
+/* Premium Navigation Link Underline */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #F26A21;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Button Lift Effect */
+.btn-lift {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(242, 106, 33, 0.35);
+}
+.btn-lift:active {
+  transform: translateY(-1px);
+}
+
+/* Hero Product Float Animation */
+@keyframes hero-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-18px) rotate(1deg);
+  }
+}
+
+.hero-float {
+  animation: hero-float 5s ease-in-out infinite;
+}
+
+.animation-delay-0 { animation-delay: 0s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-1000 { animation-delay: 1s; }
+.animation-delay-1500 { animation-delay: 1.5s; }
 
 /* Micro-Animations & Utilities */
 .glass-panel {
@@ -70,6 +124,109 @@ body {
 .text-stroke {
   -webkit-text-stroke: 1px rgba(17, 17, 17, 0.15);
   color: transparent;
+}
+
+/* Category Slider scroll hiding */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Slow zoom animation for Hero Background */
+@keyframes slow-zoom {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.12);
+  }
+}
+
+.animate-slow-zoom {
+  animation: slow-zoom 12s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Floating animation for Premium Product Jar */
+@keyframes float-premium {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(1.5deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+.animate-float-premium {
+  animation: float-premium 6s ease-in-out infinite;
+}
+
+/* Pulse animation for background spotlight */
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 7s ease-in-out infinite;
+}
+
+/* Dark Luxury Glassmorphism */
+.luxury-glass {
+  background: rgba(15, 15, 15, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.8);
+}
+
+.luxury-glass-card {
+  background: rgba(15, 15, 15, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-glass-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 107, 0, 0.3); /* Gold/orange glow */
+  box-shadow: 0 30px 50px -20px rgba(255, 107, 0, 0.15);
+}
+
+/* Subtle mouse glow or radial ambient background */
+.ambient-glow {
+  background: radial-gradient(circle at center, rgba(255, 107, 0, 0.15) 0%, transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* Scroll indicator bounce */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2.4s ease-in-out infinite;
 }
 
 /* 3D Floating Animation */
@@ -105,4 +262,156 @@ body {
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Glass reflection shine sweep for light theme cards */
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-sweep::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 30%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  transition: all 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.shine-sweep:hover::after {
+  left: 130%;
+  opacity: 1;
+}
+
+/* Ground reflection under product */
+.product-reflection {
+  -webkit-box-reflect: below 6px linear-gradient(to bottom, rgba(255, 255, 255, 0) 65%, rgba(255, 255, 255, 0.12) 100%);
+}
+
+/* Apple-style minimalist shadows for light theme */
+.apple-shadow {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.015);
+}
+
+.apple-shadow-hover {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-shadow-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.07), 0 2px 10px rgba(0, 0, 0, 0.035);
+  border-color: rgba(255, 107, 0, 0.25) !important;
+}
+
+/* Spotlight glow for product in light theme */
+.spotlight-glow {
+  background: radial-gradient(circle at center, rgba(255, 107, 0, 0.08) 0%, transparent 70%);
+  filter: blur(35px);
+}
+
+/* Explore Products CTA — Dark Green */
+.btn-explore {
+  background: #0F5D3F;
+  box-shadow: 0 4px 20px rgba(15, 93, 63, 0.35), 0 0 40px rgba(15, 93, 63, 0.15);
+}
+.btn-explore:hover {
+  background: #0D4F35;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(15, 93, 63, 0.45), 0 0 50px rgba(15, 93, 63, 0.2);
+}
+.btn-explore:active {
+  transform: translateY(0);
+}
+
+/* Discount Announcement Banner */
+.discount-banner-bg {
+  background: linear-gradient(135deg, #0A0A0A 0%, #1a1510 40%, #0A0A0A 100%);
+}
+.discount-banner-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.08) 25%,
+    rgba(212, 175, 55, 0.15) 50%,
+    rgba(212, 175, 55, 0.08) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: discount-shimmer 4s ease-in-out infinite;
+}
+@keyframes discount-shimmer {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+.discount-marquee-track {
+  display: flex;
+  animation: discount-marquee 35s linear infinite;
+}
+.discount-marquee-text {
+  padding-right: 4rem;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+}
+@keyframes discount-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes discount-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 0.6; }
+  100% {
+    transform: translateY(calc(2cm + 10px)) rotate(360deg);
+    opacity: 0;
+  }
+}
+.discount-confetti {
+  border-radius: 1px;
+  animation: discount-fall linear infinite;
+}
+.discount-sparkle {
+  border-radius: 50%;
+  background: radial-gradient(circle, #D4AF37 30%, transparent 70%);
+  animation: discount-fall linear infinite;
+}
+
+/* Premium Product Glass Card */
+.premium-glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.premium-glass-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(15, 93, 63, 0.08);
+  border-color: rgba(15, 93, 63, 0.15);
+}
+.btn-buy-now {
+  background: #0A0A0A;
+  transition: all 0.3s ease;
+}
+.btn-buy-now:hover {
+  background: #0F5D3F;
+  box-shadow: 0 4px 16px rgba(15, 93, 63, 0.3);
 }

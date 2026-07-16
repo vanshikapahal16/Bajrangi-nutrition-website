@@ -2,24 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { 
-  ShoppingBag, 
   MapPin, 
   Clock, 
   Phone, 
   Instagram, 
   Facebook,
   Youtube,
-  MessageSquare,
-  UserCheck,
-  Heart,
-  Calendar,
-  Percent
+  MessageSquare
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
 // Sub-components
-import BentoBenefits from "../components/BentoBenefits";
+import StoreHeader from "../components/StoreHeader";
+import HeroSection from "../components/HeroSection";
+import DiscountAnnouncementBanner from "../components/DiscountAnnouncementBanner";
 import PromoCarousel from "../components/PromoCarousel";
+import CustomerReviews from "../components/CustomerReviews";
+import WhyBajrangi from "../components/WhyBajrangi";
 import ProductCatalog from "../components/ProductCatalog";
 import CartDrawer from "../components/CartDrawer";
 import AdminPortal from "../components/AdminPortal";
@@ -42,11 +41,8 @@ export default function Storefront() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [marqueeText, setMarqueeText] = useState("");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isClient, setIsClient] = useState(false);
-
-  // Mark client mount
   useEffect(() => {
     setIsClient(true);
     // Load Cart from LocalStorage
@@ -71,14 +67,8 @@ export default function Storefront() {
       setProducts(data);
     });
 
-    // Subscribe to marquee text
-    const unsubMarquee = dataService.subscribeMarquee((data) => {
-      setMarqueeText(data);
-    });
-
     return () => {
       unsubProducts();
-      unsubMarquee();
     };
   }, []);
 
@@ -197,157 +187,37 @@ export default function Storefront() {
     saveCart([]);
   };
 
+  const handleBuyNow = (product: Product, quantity = 1) => {
+    handleAddToCart(product, quantity);
+    setCartDefaultMode("cart");
+    setIsCartOpen(true);
+  };
+
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Flash Sale Countdown Mock (Resets daily)
-  const [timeLeft, setTimeLeft] = useState({ hours: 12, minutes: 30, seconds: 45 });
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const diff = endOfDay.getTime() - now.getTime();
-      
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / 1000 / 60) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      
-      setTimeLeft({ hours, minutes, seconds });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   return (
-    <div className="relative min-h-screen overflow-x-hidden selection:bg-primary/25 selection:text-primary">
-      <div className="aurora-bg"></div>
+    <div className="relative min-h-screen overflow-x-hidden bg-white selection:bg-primary/25 selection:text-primary">
+      {/* Premium Header Stack */}
+      <StoreHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        cartCount={totalCartCount}
+        wishlistCount={wishlist.length}
+        onOpenCart={() => {
+          setCartDefaultMode("cart");
+          setIsCartOpen(true);
+        }}
+        onOpenWishlist={() => {
+          setCartDefaultMode("wishlist");
+          setIsCartOpen(true);
+        }}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+        isClient={isClient}
+      />
+      <HeroSection />
+      <DiscountAnnouncementBanner />
 
-      {/* 1. Announcement Marquee Bar */}
-      <div className="bg-gradient-to-r from-neutral-900 via-primary to-neutral-900 text-white text-[11px] font-bold tracking-widest uppercase py-2.5 overflow-hidden relative z-40 border-b border-white/5">
-        <div className="animate-[scroll-promo_28s_linear_infinite] whitespace-nowrap inline-block pl-[35%]">
-          {marqueeText || "🚚 FREE SAME-DAY DOORSTEP DELIVERY IN KURUKSHETRA • 🛡️ 100% GENUINE PRODUCTS GUARANTEED"}
-        </div>
-      </div>
-
-      {/* 2. Apple Glassmorphic Header */}
-      <header className="sticky top-0 h-[80px] bg-white/70 backdrop-blur-md border-b border-gray-150 flex items-center z-40 transition-all">
-        <div className="max-w-7xl mx-auto w-full px-6 flex items-center justify-between">
-          {/* Logo link */}
-          <a href="#" className="flex items-center gap-2">
-            <div className="relative w-11 h-11 rounded-full bg-white border border-primary/5 p-1">
-              <img src="/assets/logo.png" alt="Bajrangi Logo" className="w-full h-full object-contain" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-text-main leading-tight">BAJRANGI</span>
-              <span className="text-[9px] font-black uppercase text-primary tracking-widest leading-none">NUTRITIONS</span>
-            </div>
-          </a>
-
-          {/* Quick links scroll bar shortcut */}
-          <nav className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-wider text-text-muted">
-            <a href="#" className="hover:text-primary transition-all">Home</a>
-            <a href="#trending-section" className="hover:text-primary transition-all">Bestsellers</a>
-            <a href="#benefits-section" className="hover:text-primary transition-all">Purity Proof</a>
-            <a href="#catalog-section" className="hover:text-primary transition-all">Catalog</a>
-            <a href="#contact-section" className="hover:text-primary transition-all">Outlet Map</a>
-          </nav>
-
-          {/* Header Action Buttons */}
-          <div className="flex items-center gap-4">
-            {/* Owner portal trigger */}
-            <button 
-              onClick={() => setIsAdminOpen(true)}
-              className="w-10 h-10 rounded-full bg-white/80 border border-gray-150 flex items-center justify-center text-text-muted hover:text-primary hover:bg-white shadow-sm hover:shadow-md transition-all"
-              title="Admin Panel"
-            >
-              <UserCheck className="w-4.5 h-4.5" />
-            </button>
-
-            {/* Wishlist button */}
-            <button 
-              onClick={() => {
-                setCartDefaultMode("wishlist");
-                setIsCartOpen(true);
-              }}
-              className="relative w-10 h-10 rounded-full bg-white/80 border border-gray-150 flex items-center justify-center text-text-muted hover:text-red-500 hover:bg-white shadow-sm hover:shadow-md transition-all"
-              title="View Wishlist"
-            >
-              <Heart className="w-4.5 h-4.5" />
-              {isClient && wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
-                  {wishlist.length}
-                </span>
-              )}
-            </button>
-
-            {/* Shopping Cart button */}
-            <button 
-              onClick={() => {
-                setCartDefaultMode("cart");
-                setIsCartOpen(true);
-              }}
-              className="relative w-10 h-10 rounded-full bg-white/80 border border-gray-150 flex items-center justify-center text-text-muted hover:text-primary hover:bg-white shadow-sm hover:shadow-md transition-all"
-              title="View Cart"
-            >
-              <ShoppingBag className="w-4.5 h-4.5" />
-              {isClient && totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-white text-[9px] font-black flex items-center justify-center animate-bounce shadow-sm">
-                  {totalCartCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* 3. Hero Section — Full-bleed Video Background */}
-      <section className="relative min-h-[calc(100vh-120px)] flex items-center justify-center overflow-hidden">
-        {/* Background video: plays once, holds on its last frame (no loop) */}
-        <video
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover -z-10"
-        >
-          <source src="/assets/hero-video.mp4" type="video/mp4" />
-        </video>
-        {/* Dark overlay so the tagline stays readable over any frame */}
-        <div className="absolute inset-0 bg-black/45 -z-10"></div>
-
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-          <h1 className="font-display font-extrabold uppercase tracking-tight leading-[0.95] text-4xl sm:text-6xl md:text-7xl text-white drop-shadow-lg">
-            100% Genuine Product,<br />
-            <span className="text-primary">But With Confidence</span>
-          </h1>
-        </div>
-      </section>
-
-      {/* 4. Flash Deal Banner Section */}
-      <section className="bg-bg-light border-y border-gray-150 py-8 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center animate-pulse"><Percent className="w-6 h-6" /></div>
-            <div>
-              <h4 className="text-sm font-black uppercase tracking-tight">Kurukshetra Special Bundle deals</h4>
-              <p className="text-text-muted text-[11px] font-medium">Auto Buy 2 Get 1 FREE applied on selected liver and health capsules!</p>
-            </div>
-          </div>
-
-          {/* Timer */}
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">Deals Expire In:</span>
-            <div className="flex gap-1.5 font-mono text-xs font-black text-white">
-              <span className="bg-text-main px-2.5 py-1.5 rounded-lg">{timeLeft.hours.toString().padStart(2, "0")}h</span>
-              <span className="text-text-main font-bold py-1">:</span>
-              <span className="bg-text-main px-2.5 py-1.5 rounded-lg">{timeLeft.minutes.toString().padStart(2, "0")}m</span>
-              <span className="text-text-main font-bold py-1">:</span>
-              <span className="bg-primary px-2.5 py-1.5 rounded-lg">{timeLeft.seconds.toString().padStart(2, "0")}s</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Promotional Product Carousel (MyProtein inspired) */}
+      {/* Promotional Product Carousel */}
       {isClient && products.length > 0 && (
         <PromoCarousel 
           products={products}
@@ -368,12 +238,10 @@ export default function Storefront() {
         />
       )}
 
-      {/* 6. Bento Grid Benefits */}
-      <BentoBenefits />
-
-      {/* 7. Catalog Section */}
+      {/* Explore Products - Catalog Section */}
       <ProductCatalog 
         onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         searchQuery={searchQuery}
@@ -382,8 +250,14 @@ export default function Storefront() {
         onToggleWishlist={handleToggleWishlist}
       />
 
+      {/* Why Bajrangi Nutrition Section */}
+      <WhyBajrangi />
+
+      {/* Customer Reviews */}
+      <CustomerReviews />
+
       {/* 8. Physical Outlet Map & Hours */}
-      <section className="py-20 bg-bg-light border-t border-gray-150" id="contact-section">
+      <section className="py-20 bg-bg-light border-t border-gray-100" id="contact-section">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
             <span className="text-primary font-bold text-xs uppercase tracking-widest">Store Location</span>
@@ -394,7 +268,7 @@ export default function Storefront() {
             
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white border border-gray-150 flex items-center justify-center text-primary shadow-sm"><MapPin className="w-5 h-5" /></div>
+                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-primary shadow-sm"><MapPin className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Store Address</h4>
                   <p className="text-text-muted text-xs mt-0.5">Bajrangi Nutrition, Pipili Road, Opp. Near New Bus Stand, Kurukshetra, Haryana - 136119</p>
@@ -402,7 +276,7 @@ export default function Storefront() {
               </div>
               
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white border border-gray-150 flex items-center justify-center text-primary shadow-sm"><Phone className="w-5 h-5" /></div>
+                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-primary shadow-sm"><Phone className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">WhatsApp Direct Phone</h4>
                   <p className="text-text-muted text-xs mt-0.5">+91 95887-15527 | +91 99960-67101</p>
@@ -410,7 +284,7 @@ export default function Storefront() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white border border-gray-150 flex items-center justify-center text-primary shadow-sm"><Clock className="w-5 h-5" /></div>
+                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-primary shadow-sm"><Clock className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Working Hours</h4>
                   <p className="text-text-muted text-xs mt-0.5">Monday - Sunday: 10:00 AM - 9:00 PM (KUK University Delivery 24/7)</p>
@@ -420,7 +294,7 @@ export default function Storefront() {
           </div>
 
           {/* Map Frame */}
-          <div className="h-[380px] rounded-3xl overflow-hidden shadow-lg border border-gray-150 relative">
+          <div className="h-[380px] rounded-3xl overflow-hidden shadow-lg border border-gray-100 relative">
             <iframe 
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13791.642533036495!2d76.81268393529237!3d29.967664875323573!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390e3f4251df83df%3A0x6e902cf697b0032b!2sKurukshetra%20University!5e0!3m2!1sen!2sin!4v1721020000000!5m2!1sen!2sin" 
               className="w-full h-full border-none filter grayscale contrast-110 saturate-50"
@@ -432,7 +306,7 @@ export default function Storefront() {
       </section>
 
       {/* 9. Footer */}
-      <footer className="bg-white border-t border-gray-150 py-16">
+      <footer className="bg-white border-t border-gray-100 py-16">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-gray-100">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
