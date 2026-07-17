@@ -109,7 +109,7 @@ export const SECURITY_CONFIG = {
   maxUploadSize: 2 * 1024 * 1024  // 2MB max image upload size
 };
 
-const ADMIN_EMAILS = ["vanshikapahal16@gmail.com"];
+const ADMIN_EMAILS = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || ["vanshikapahal16@gmail.com"];
 
 // CLIENT-SIDE RATE LIMITER
 export class RateLimiter {
@@ -825,7 +825,7 @@ class AuthService {
       }
     } else {
       // Offline mode mock login
-      const email = prompt("Enter Admin Gmail address for authentication testing:", "vanshikapahal16@gmail.com");
+      const email = prompt("Enter Admin Gmail address for authentication testing:", process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',')[0] || "admin@example.com");
       if (email === null) return;
       if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
         const mockUser = {
@@ -835,7 +835,7 @@ class AuthService {
         };
         onSuccess(mockUser);
       } else {
-        onError("Access Denied: Only vanshikapahal16@gmail.com is authorized.");
+        onError(`Access Denied: Only ${ADMIN_EMAILS.join(', ')} is authorized.`);
       }
     }
   }
