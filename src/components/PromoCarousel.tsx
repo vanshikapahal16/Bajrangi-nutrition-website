@@ -33,6 +33,8 @@ export default function PromoCarousel({
   };
 
   const bestSellers = products.filter(p => p.isBestseller);
+  // Fallback to top products if no bestsellers exist or products are still loading
+  const displayProducts = bestSellers.length > 0 ? bestSellers : products.slice(0, 5);
 
   const handleCardClick = (productId: string) => {
     const catalogSection = document.getElementById("catalog-section");
@@ -93,7 +95,7 @@ export default function PromoCarousel({
           className="flex gap-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory py-4 scroll-smooth"
           style={{ scrollPadding: "24px" }}
         >
-          {bestSellers.map((product) => {
+          {displayProducts.map((product) => {
             const isWishlisted = wishlist.includes(product.id);
             const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
             const outOfStock = product.stock <= 0;

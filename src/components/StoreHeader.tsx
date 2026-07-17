@@ -19,6 +19,7 @@ interface StoreHeaderProps {
   onOpenCart: () => void;
   onOpenWishlist: () => void;
   onOpenAdmin: () => void;
+  onOpenMyAccount: () => void;
   isClient: boolean;
 }
 
@@ -39,6 +40,7 @@ export default function StoreHeader({
   onOpenCart,
   onOpenWishlist,
   onOpenAdmin,
+  onOpenMyAccount,
   isClient,
 }: StoreHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -118,8 +120,9 @@ export default function StoreHeader({
               </button>
 
               <button
+                onClick={onOpenMyAccount}
                 className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-primary hover:bg-[#F8F8F8] transition-all"
-                title="Account"
+                title="My Account"
               >
                 <User className="w-[18px] h-[18px]" />
               </button>

@@ -126,16 +126,9 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
     );
   };
 
-  // Force seed default products
+  // Force seed default products - DISABLED since we want manual entry
   const handleForceSeed = async () => {
-    if (confirm("Seed default catalogue to database? This will verify cloud connections.")) {
-      try {
-        await dataService.seedFirebaseProducts();
-        showToast("Default supplements and coupons seeded successfully!", "success");
-      } catch (err: any) {
-        showToast(`Seeding failed: ${err.message}`, "danger");
-      }
-    }
+    showToast("Seeding disabled. Please add products manually through the Add Supplement tab.", "warning");
   };
 
   // Stock additions
@@ -156,6 +149,27 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
       showToast(`Order marked as ${status}!`, "success");
     } catch (err: any) {
       showToast(err.message || "Failed to update status.", "danger");
+    }
+  };
+
+  // Review approval
+  const handleApproveReview = async (reviewId: string) => {
+    try {
+      await dataService.updateReviewApproval(reviewId, true);
+      showToast("Review approved and now visible on website!", "success");
+    } catch (err: any) {
+      showToast(err.message || "Failed to approve review.", "danger");
+    }
+  };
+
+  // Review deletion
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm("Are you sure you want to delete this review?")) return;
+    try {
+      await dataService.deleteReview(reviewId);
+      showToast("Review deleted successfully.", "success");
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete review.", "danger");
     }
   };
 
@@ -207,12 +221,9 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
       name: formName,
       category: formCategory,
       price: Number(formPrice),
-      originalPrice: Number(formOriginalPrice),
-      weight: formWeight,
-      servings: formServings,
-      flavor: formFlavor,
+      originalPrice: formOriginalPrice ? Number(formOriginalPrice) : Number(formPrice), // Default to sale price if not provided
       stock: Number(formStock),
-      description: formDesc,
+      description: formDesc || "",
       isRunning: formRunning,
       isBestseller: formBestseller,
       isVeg: formVeg,
@@ -220,14 +231,18 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
       images: formImages.length > 0 ? formImages : [formImageUrl || "/assets/whey_isolate.png"]
     };
 
-    if (formHasBundle) {
+    // Only include optional fields if they have values
+    if (formWeight) payload.weight = formWeight;
+    if (formServings) payload.servings = formServings;
+    if (formFlavor) payload.flavor = formFlavor;
+
+    // Only include bundle deal if checkbox is checked and values are provided
+    if (formHasBundle && formBuyQty && formFreeQty && formBundleLabel) {
       payload.bundleDeal = {
         buyQty: formBuyQty,
         freeQty: formFreeQty,
         label: formBundleLabel
       };
-    } else {
-      payload.bundleDeal = undefined; // clear
     }
 
     if (editProductId) {
@@ -235,13 +250,41 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
     }
 
     try {
-      await dataService.saveProduct(payload);
+      // Optimistic update - add to local state immediately for instant feedback
+      const tempId = editProductId || `temp-${Date.now()}`;
+      const optimisticProduct = { ...payload, id: tempId } as Product;
+
+      if (editProductId) {
+        // Update existing product in local state
+        setProducts(prev => prev.map(p => p.id === editProductId ? optimisticProduct : p));
+      } else {
+        // Add new product to local state immediately
+        setProducts(prev => [...prev, optimisticProduct]);
+      }
+
       showToast(editProductId ? "Product updated!" : "Product added to catalog!", "success");
 
-      resetForm();
-      setActiveTab("inventory");
+      // Then perform the actual database operation in background
+      await dataService.saveProduct(payload);
+
+      // Reset form but stay on form tab for quick entry of next product
+      if (!editProductId) {
+        resetForm();
+        // Keep on form tab for quick entry
+      } else {
+        resetForm();
+        setActiveTab("inventory");
+      }
     } catch (err: any) {
       showToast(err.message || "Failed to save product.", "danger");
+      // Revert optimistic update on error
+      if (editProductId) {
+        // Reload products to revert
+        dataService.getProducts().then(setProducts).catch(() => {});
+      } else {
+        // Remove the temp product
+        setProducts(prev => prev.filter(p => p.id !== `temp-${Date.now()}`));
+      }
     }
   };
 
@@ -297,11 +340,20 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
 
   const handleDeleteProduct = async (pId: string) => {
     if (confirm("Permanently delete this product?")) {
+      // Optimistic update - remove from local state immediately for instant feedback
+      const deletedProduct = products.find(p => p.id === pId);
+      setProducts(prev => prev.filter(p => p.id !== pId));
+      showToast("Product deleted successfully.", "success");
+
       try {
+        // Then perform the actual database operation in background
         await dataService.deleteProduct(pId);
-        showToast("Product deleted successfully.", "success");
       } catch (err: any) {
         showToast(err.message || "Deletion failed.", "danger");
+        // Revert optimistic update on error - restore the deleted product
+        if (deletedProduct) {
+          setProducts(prev => [...prev, deletedProduct]);
+        }
       }
     }
   };
@@ -336,24 +388,6 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
     }
   };
 
-  // Review approvals
-  const handleApproveReview = async (rId: string) => {
-    try {
-      await dataService.updateReviewApproval(rId, true);
-      showToast("Review approved & published!", "success");
-    } catch (err: any) {
-      showToast(err.message, "danger");
-    }
-  };
-
-  const handleDeleteReview = async (rId: string) => {
-    try {
-      await dataService.deleteReview(rId);
-      showToast("Review deleted.", "primary");
-    } catch (err: any) {
-      showToast(err.message, "danger");
-    }
-  };
 
   // Marquee Save
   const handleSaveMarquee = async () => {
@@ -683,8 +717,8 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="font-bold text-text-muted uppercase tracking-wider">Original Price / MRP (INR) *</label>
-                      <input type="number" required placeholder="e.g. 1499" value={formOriginalPrice || ""} onChange={(e) => setFormOriginalPrice(Number(e.target.value))} className="bg-bg-light border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary transition-all text-xs" />
+                      <label className="font-bold text-text-muted uppercase tracking-wider">Original Price / MRP (INR)</label>
+                      <input type="number" placeholder="e.g. 1499 (optional - for discount display)" value={formOriginalPrice || ""} onChange={(e) => setFormOriginalPrice(Number(e.target.value))} className="bg-bg-light border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary transition-all text-xs" />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -712,22 +746,22 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                   <div className="bg-bg-light/60 border border-gray-200 rounded-2xl p-5 space-y-4">
                     <label className="flex items-center gap-2 cursor-pointer font-bold uppercase tracking-wider text-text-muted">
                       <input type="checkbox" checked={formHasBundle} onChange={(e) => setFormHasBundle(e.target.checked)} className="w-4 h-4 accent-primary" />
-                      Configure Buy X Get Y Free Bundle Deal
+                      Configure Buy X Get Y Free Bundle Deal (Optional)
                     </label>
-                    
+
                     {formHasBundle && (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                         <div className="flex flex-col gap-1.5">
-                          <label className="font-bold text-text-muted">Customer Buys Qty *</label>
-                          <input type="number" required value={formBuyQty} onChange={(e) => setFormBuyQty(Number(e.target.value))} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs" />
+                          <label className="font-bold text-text-muted">Customer Buys Qty</label>
+                          <input type="number" placeholder="e.g. 2" value={formBuyQty} onChange={(e) => setFormBuyQty(Number(e.target.value))} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs" />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="font-bold text-text-muted">Gets FREE Qty *</label>
-                          <input type="number" required value={formFreeQty} onChange={(e) => setFormFreeQty(Number(e.target.value))} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs" />
+                          <label className="font-bold text-text-muted">Gets FREE Qty</label>
+                          <input type="number" placeholder="e.g. 1" value={formFreeQty} onChange={(e) => setFormFreeQty(Number(e.target.value))} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs" />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="font-bold text-text-muted">Bundle Deal Label *</label>
-                          <input type="text" required value={formBundleLabel} onChange={(e) => setFormBundleLabel(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs" />
+                          <label className="font-bold text-text-muted">Bundle Deal Label</label>
+                          <input type="text" placeholder="e.g. Buy 2 Get 1 Free" value={formBundleLabel} onChange={(e) => setFormBundleLabel(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs" />
                         </div>
                       </div>
                     )}
@@ -771,8 +805,8 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-text-muted uppercase tracking-wider">Product Description *</label>
-                    <textarea required rows={4} placeholder="Product formulas, benefits..." value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="bg-bg-light border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary transition-all text-xs"></textarea>
+                    <label className="font-bold text-text-muted uppercase tracking-wider">Product Description</label>
+                    <textarea rows={4} placeholder="Product formulas, benefits... (optional)" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="bg-bg-light border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary transition-all text-xs"></textarea>
                   </div>
 
                   <div className="flex flex-wrap gap-6 pt-2">
