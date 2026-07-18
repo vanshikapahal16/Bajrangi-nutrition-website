@@ -309,6 +309,29 @@ class DataService {
     }
   }
 
+  async getProducts(): Promise<Product[]> {
+    if (this.isCloud && db) {
+      try {
+        const snapshot = await getDocs(collection(db, "products"));
+        const products: Product[] = [];
+        snapshot.forEach((doc) => {
+          products.push({ id: doc.id, ...doc.data() } as Product);
+        });
+        return products.length === 0 ? DEFAULT_PRODUCTS : products;
+      } catch (error) {
+        console.error("Firestore getProducts error:", error);
+        return this.getLocalProductsOnce();
+      }
+    } else {
+      return this.getLocalProductsOnce();
+    }
+  }
+
+  private getLocalProductsOnce(): Product[] {
+    if (typeof window === "undefined") return [];
+    return JSON.parse(localStorage.getItem("bajrangi_products") || "[]");
+  }
+
   private subscribeLocalProducts(callback: (products: Product[]) => void) {
     if (typeof window === "undefined") return;
     const load = () => {

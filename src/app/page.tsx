@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Clock,
@@ -13,7 +13,6 @@ import {
   ShoppingBag
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { motion, AnimatePresence } from "framer-motion";
 
 // Sub-components
 import StoreHeader from "../components/StoreHeader";
@@ -327,9 +326,7 @@ export default function Storefront() {
                   <p className="text-text-muted text-xs mt-1 font-medium">@bajrangi_nutrition_kurukshetra</p>
                 </div>
               </div>
-                </div>
-              </div>
-
+              
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0"><Clock className="w-5 h-5" /></div>
                 <div>

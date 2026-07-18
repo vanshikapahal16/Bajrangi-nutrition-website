@@ -143,7 +143,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
   };
 
   // Status updates
-  const handleUpdateStatus = async (orderId: string, status: "Completed" | "Cancelled") => {
+  const handleUpdateStatus = async (orderId: string, status: "Delivered" | "Cancelled") => {
     try {
       await dataService.updateOrderStatus(orderId, status);
       showToast(`Order marked as ${status}!`, "success");
@@ -441,8 +441,8 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
   };
 
   // Analytics metrics
-  const totalRevenue = orders.filter(o => o.status === "Completed").reduce((sum, o) => sum + o.totalPrice, 0);
-  const totalSold = orders.filter(o => o.status === "Completed").reduce((sum, o) => sum + o.items.reduce((acc, i) => acc + i.quantity, 0), 0);
+  const totalRevenue = orders.filter(o => o.status === "Delivered").reduce((sum, o) => sum + o.totalPrice, 0);
+  const totalSold = orders.filter(o => o.status === "Delivered").reduce((sum, o) => sum + o.items.reduce((acc, i) => acc + i.quantity, 0), 0);
   const lowStock = products.filter(p => p.stock <= 4);
 
   return (
@@ -872,7 +872,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                             <td className="p-4 text-text-muted">{new Date(o.createdAt).toLocaleString("en-IN", { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                             <td className="p-4">
                               <span className={`px-2 py-0.5 rounded-md font-bold text-[9px] border ${
-                                o.status === "Completed" 
+                                o.status === "Delivered" 
                                   ? "bg-green-500/10 border-green-500/20 text-green-600" 
                                   : o.status === "Cancelled" 
                                   ? "bg-danger/10 border-danger/20 text-danger" 
@@ -884,7 +884,7 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
                             <td className="p-4 pr-6 text-right">
                               {o.status === "Pending" ? (
                                 <div className="inline-flex gap-1">
-                                  <button onClick={() => handleUpdateStatus(o.id, "Completed")} className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg font-bold"><Check className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => handleUpdateStatus(o.id, "Delivered")} className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg font-bold"><Check className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => handleUpdateStatus(o.id, "Cancelled")} className="bg-white border border-gray-250 text-danger p-1.5 rounded-lg hover:border-danger"><X className="w-3.5 h-3.5" /></button>
                                 </div>
                               ) : (
