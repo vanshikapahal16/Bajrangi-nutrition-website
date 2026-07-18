@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2, Plus, Minus, CheckCircle, Smartphone, Tag, Heart, ShoppingCart } from "lucide-react";
-import { CartItem, Product, SchemaValidator, dataService, RateLimiter, Coupon } from "../lib/services";
+import { X, Trash2, Plus, Minus, CheckCircle, Smartphone, Tag, Heart, ShoppingCart, LogIn } from "lucide-react";
+import { CartItem, Product, SchemaValidator, dataService, RateLimiter, Coupon, customerAuthService } from "../lib/services";
+import OrderConfirmation from "./OrderConfirmation";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -38,9 +39,16 @@ export default function CartDrawer({
 }: CartDrawerProps) {
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(defaultMode);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [confirmedOrderAmount, setConfirmedOrderAmount] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   // Coupon States
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponInput, setCouponInput] = useState("");
@@ -51,6 +59,22 @@ export default function CartDrawer({
       setDrawerMode(defaultMode);
     }
   }, [isOpen, defaultMode]);
+
+  useEffect(() => {
+    // Check customer auth state
+    const unsubscribe = customerAuthService.checkAuthState((user) => {
+      setIsAuthenticated(!!user);
+      setCurrentUser(user);
+      if (user) {
+        setCustomerName(user.displayName || "");
+        setCustomerPhone(user.phoneNumber || "");
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const WHATSAPP_NUMBER = "919588715527"; // Shop target number
 
@@ -117,9 +141,30 @@ export default function CartDrawer({
     showToast("Coupon removed.", "primary");
   };
 
+  // Handle Google Sign-In for checkout
+  const handleCustomerLogin = async () => {
+    await customerAuthService.login(
+      (user) => {
+        setIsAuthenticated(true);
+        setCurrentUser(user);
+        showToast("Successfully signed in!", "success");
+      },
+      (error) => {
+        showToast(error, "danger");
+      }
+    );
+  };
+
   // Checkout order submission
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      showToast("Please sign in to continue with checkout", "warning");
+      await handleCustomerLogin();
+      return;
+    }
 
     // 1. Rate Limit check
     const rateLimit = RateLimiter.checkCheckout();
@@ -137,11 +182,19 @@ export default function CartDrawer({
     }
 
     // Compile WhatsApp redirect message
+    const orderDateTime = new Date().toLocaleString('en-IN', { 
+      dateStyle: 'medium', 
+      timeStyle: 'short',
+      timeZone: 'Asia/Kolkata'
+    });
+    
     let message = `*NEW ORDER - BAJRANGI NUTRITION KURUKSHETRA*\n`;
     message += `===================================\n`;
     message += `*Customer Details:*\n`;
     message += `👤 Name: ${customerName.trim()}\n`;
-    message += `📞 Contact: ${customerPhone.trim()}\n\n`;
+    message += `📞 Contact: ${customerPhone.trim()}\n`;
+    message += `📧 Email: ${currentUser?.email || 'N/A'}\n`;
+    message += `🕐 Order Placed: ${orderDateTime}\n\n`;
     message += `*Ordered Items:*\n`;
     
     // Add primary items
@@ -173,12 +226,17 @@ export default function CartDrawer({
       message += `🎟️ Discount Coupon [${appliedCoupon.code}]: -₹${couponDiscount.toLocaleString("en-IN")}\n`;
     }
     message += `*Total Amount Payable:* ₹${finalSubtotal.toLocaleString("en-IN")}\n\n`;
+    message += `*Delivery Location:*\n`;
+    message += `📍 ${customerAddress}\n\n`;
     message += `Please confirm availability and dispatch my order. Thank you!`;
 
     const orderLog = {
       items: orderItems,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
+      customerAddress: customerAddress.trim(),
+      customerId: currentUser?.uid,
+      customerEmail: currentUser?.email,
       totalPrice: finalSubtotal,
       status: "Pending" as const
     };
@@ -186,28 +244,20 @@ export default function CartDrawer({
     try {
       setIsCheckingOut(true);
       await dataService.createOrder(orderLog);
-      
+
       // Record rate limit check
       RateLimiter.recordCheckout();
 
-      // Notify
-      showToast("Order logged successfully. Redirecting to WhatsApp...", "success");
+      // Store order amount before clearing cart
+      setConfirmedOrderAmount(finalSubtotal);
       
-      // Reset forms
-      onClearCart();
+      // Show full-screen order confirmation
+      setShowOrderConfirmation(true);
+      setOrderConfirmed(true);
       setIsCheckingOut(false);
-      setAppliedCoupon(null);
-      setCustomerName("");
-      setCustomerPhone("");
-      onClose();
 
-      // Direct open WhatsApp
-      const encodedMsg = encodeURIComponent(message);
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMsg}`;
-      
-      setTimeout(() => {
-        window.open(whatsappUrl, "_blank");
-      }, 800);
+      // Clear cart after successful order
+      onClearCart();
 
     } catch (err: any) {
       console.error("Order Creation Trace:", err.message);
@@ -220,26 +270,27 @@ export default function CartDrawer({
   const wishlistProducts = products.filter(p => wishlist.includes(p.id));
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          />
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            />
 
-          {/* Frosted Glass Cart Drawer */}
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 z-50 w-full sm:w-[420px] h-screen glass-panel shadow-2xl flex flex-col justify-between"
-          >
+            {/* Frosted Glass Cart Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed top-0 right-0 z-[100] w-full sm:w-[420px] h-screen glass-panel shadow-2xl flex flex-col justify-between"
+            >
             {/* Header / Tabs */}
             <div className="p-6 border-b border-gray-100 bg-white/50 flex-shrink-0">
               <div className="flex justify-between items-center mb-5">
@@ -426,58 +477,88 @@ export default function CartDrawer({
             </div>
 
             {/* Cart Footer */}
-            {drawerMode === "cart" && cart.length > 0 && (
+            {drawerMode === "cart" && (cart.length > 0 || showCheckoutForm || orderConfirmed) && (
               <div className="p-6 border-t border-gray-100 bg-white/50 flex-shrink-0">
-                {/* Coupon entry form */}
-                {!appliedCoupon ? (
-                  <form onSubmit={handleApplyCoupon} className="flex gap-2 mb-5">
-                    <input 
-                      type="text" 
-                      placeholder="Enter Promo Code" 
-                      value={couponInput}
-                      onChange={(e) => setCouponInput(e.target.value)}
-                      className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs text-text-main outline-none focus:border-primary flex-grow uppercase font-semibold"
-                    />
-                    <button type="submit" className="bg-text-main hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1 shadow-sm">
-                      <Tag className="w-3.5 h-3.5" /> Apply
-                    </button>
-                  </form>
-                ) : (
-                  <div className="flex justify-between items-center bg-green-50 border border-green-200 px-4 py-2.5 rounded-xl text-xs mb-5 font-bold text-green-700">
-                    <span className="flex items-center gap-1.5">🎟️ Coupon applied: {appliedCoupon.code}</span>
-                    <button type="button" onClick={handleRemoveCoupon} className="text-danger hover:underline">Remove</button>
+                {/* Coupon entry form - Hide during checkout form */}
+                {!showCheckoutForm && !orderConfirmed && (
+                  !appliedCoupon ? (
+                    <form onSubmit={handleApplyCoupon} className="flex gap-2 mb-5">
+                      <input
+                        type="text"
+                        placeholder="Enter Promo Code"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs text-text-main outline-none focus:border-primary flex-grow uppercase font-semibold"
+                      />
+                      <button type="submit" className="bg-text-main hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1 shadow-sm">
+                        <Tag className="w-3.5 h-3.5" /> Apply
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="flex justify-between items-center bg-green-50 border border-green-200 px-4 py-2.5 rounded-xl text-xs mb-5 font-bold text-green-700">
+                      <span className="flex items-center gap-1.5">🎟️ Coupon applied: {appliedCoupon.code}</span>
+                      <button type="button" onClick={handleRemoveCoupon} className="text-danger hover:underline">Remove</button>
+                    </div>
+                  )
+                )}
+
+                {/* Billing Summary - Hide during checkout form */}
+                {!showCheckoutForm && !orderConfirmed && (
+                  <div className="space-y-2 mb-6">
+                    <div className="flex justify-between text-xs text-text-muted font-medium">
+                      <span>Subtotal</span>
+                      <span>₹{baseSubtotal.toLocaleString("en-IN")}</span>
+                    </div>
+                    {appliedCoupon && (
+                      <div className="flex justify-between text-xs text-green-600 font-bold">
+                        <span>Discount (Coupon)</span>
+                        <span>-₹{couponDiscount.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs text-text-muted font-medium">
+                      <span>Local Delivery Fee</span>
+                      <span className="text-green-600 font-bold uppercase tracking-wider">Free</span>
+                    </div>
+                    <div className="flex justify-between text-base font-extrabold text-text-main pt-2.5 border-t border-dashed border-gray-200">
+                      <span>Total Amount</span>
+                      <span>₹{finalSubtotal.toLocaleString("en-IN")}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Billing Summary */}
-                <div className="space-y-2 mb-6">
-                  <div className="flex justify-between text-xs text-text-muted font-medium">
-                    <span>Subtotal</span>
-                    <span>₹{baseSubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                  {appliedCoupon && (
-                    <div className="flex justify-between text-xs text-green-600 font-bold">
-                      <span>Discount (Coupon)</span>
-                      <span>-₹{couponDiscount.toLocaleString("en-IN")}</span>
+                {/* Checkout Form Toggle */}
+                {!showCheckoutForm ? (
+                  isAuthenticated ? (
+                    <button
+                      onClick={() => setShowCheckoutForm(true)}
+                      className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2"
+                    >
+                      <Smartphone className="w-4 h-4" /> Proceed to Checkout
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCustomerLogin}
+                      className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2"
+                    >
+                      <LogIn className="w-4 h-4" /> Sign In to Checkout
+                    </button>
+                  )
+                ) : orderConfirmed ? (
+                  <div className="text-center space-y-4 pt-4">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                      <CheckCircle className="w-10 h-10 text-green-600" />
                     </div>
-                  )}
-                  <div className="flex justify-between text-xs text-text-muted font-medium">
-                    <span>Local Delivery Fee</span>
-                    <span className="text-green-600 font-bold uppercase tracking-wider">Free</span>
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-extrabold text-green-700">🎉 Order Placed Successfully!</h4>
+                      <p className="text-sm font-bold text-text-main">Check your confirmation screen</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-base font-extrabold text-text-main pt-2.5 border-t border-dashed border-gray-200">
-                    <span>Total Amount</span>
-                    <span>₹{finalSubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-
-                {/* Direct WhatsApp Checkout Form Toggle */}
-                {isCheckingOut ? (
+                ) : (
                   <form onSubmit={handleCheckoutSubmit} className="space-y-4 pt-4 border-t border-gray-100">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Your Full Name *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         placeholder="e.g. Rahul Sharma"
                         value={customerName}
@@ -490,8 +571,8 @@ export default function CartDrawer({
                       <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">WhatsApp Mobile No *</label>
                       <div className="relative flex items-center">
                         <Smartphone className="absolute left-3 w-4 h-4 text-text-muted" />
-                        <input 
-                          type="tel" 
+                        <input
+                          type="tel"
                           required
                           placeholder="e.g. 9876543210"
                           value={customerPhone}
@@ -501,29 +582,45 @@ export default function CartDrawer({
                       </div>
                     </div>
 
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Delivery Address *</label>
+                      <textarea
+                        required
+                        placeholder="Enter your full address manually"
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-text-main outline-none focus:border-primary transition-all resize-none"
+                        rows={3}
+                      />
+                      {customerAddress && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customerAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-primary hover:underline flex items-center gap-1 mt-1"
+                        >
+                          📍 View address on Google Maps
+                        </a>
+                      )}
+                    </div>
+
                     <div className="flex gap-2 pt-2">
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => setIsCheckingOut(false)}
+                        onClick={() => setShowCheckoutForm(false)}
                         className="w-1/3 border border-gray-200 hover:border-gray-300 text-text-muted text-xs uppercase font-extrabold tracking-wider py-3.5 rounded-xl transition-all"
                       >
                         Back
                       </button>
-                      <button 
+                      <button
                         type="submit"
-                        className="w-2/3 bg-green-500 hover:bg-green-600 text-white text-xs uppercase font-extrabold tracking-wider py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5"
+                        disabled={isCheckingOut}
+                        className="w-2/3 bg-green-500 hover:bg-green-600 text-white text-xs uppercase font-extrabold tracking-wider py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                       >
-                        Confirm order
+                        {isCheckingOut ? "Processing..." : "Confirm Order"}
                       </button>
                     </div>
                   </form>
-                ) : (
-                  <button
-                    onClick={() => setIsCheckingOut(true)}
-                    className="w-full bg-primary hover:bg-primary-hover text-white text-xs uppercase font-extrabold tracking-wider py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    Proceed to Checkout
-                  </button>
                 )}
               </div>
             )}
@@ -532,5 +629,21 @@ export default function CartDrawer({
         </>
       )}
     </AnimatePresence>
+
+    {/* Full-screen Order Confirmation */}
+    <OrderConfirmation
+      isOpen={showOrderConfirmation}
+      onClose={() => {
+        setShowOrderConfirmation(false);
+        setShowCheckoutForm(false);
+        setOrderConfirmed(false);
+        onClose();
+      }}
+      customerName={customerName}
+      customerPhone={customerPhone}
+      customerAddress={customerAddress}
+      totalAmount={confirmedOrderAmount}
+    />
+    </>
   );
 }

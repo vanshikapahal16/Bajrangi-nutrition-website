@@ -1,16 +1,19 @@
 import { isFirebaseConfigured, db, auth, googleProvider } from "./firebase";
-import { 
-  collection, 
-  doc, 
-  onSnapshot, 
-  setDoc, 
-  addDoc, 
-  deleteDoc, 
-  updateDoc, 
-  query, 
-  orderBy, 
-  increment, 
-  serverTimestamp 
+import {
+  collection,
+  doc,
+  onSnapshot,
+  setDoc,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  query,
+  where,
+  getDoc,
+  getDocs,
+  orderBy,
+  increment,
+  serverTimestamp
 } from "firebase/firestore";
 import { 
   signInWithPopup, 
@@ -58,9 +61,34 @@ export interface Order {
   items: OrderItem[];
   customerName: string;
   customerPhone: string;
+  customerAddress?: string;
+  customerId?: string;
+  customerEmail?: string;
   totalPrice: number;
-  status: "Pending" | "Completed" | "Cancelled";
+  status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
+  deliveryStatus?: string;
+  trackingId?: string;
   createdAt: any;
+  updatedAt?: any;
+}
+
+export interface Customer {
+  id: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  phone?: string;
+  addresses: SavedAddress[];
+  createdAt: any;
+}
+
+export interface SavedAddress {
+  id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  addressLine: string;
+  isDefault: boolean;
 }
 
 export interface CartItem {
@@ -229,127 +257,12 @@ export class SchemaValidator {
   }
 }
 
-// Initial default catalog seeding fallback
-export const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: "prod-whey-isolate",
-    name: "Bajrangi Nutrition Whey Isolate",
-    category: "Protein",
-    description: "Premium pure Whey Protein Isolate. Delivers 25g of high-quality fast-absorbing protein, 5.5g BCAA, and 4g Glutamine per serving. Lab-tested, 100% authentic, and perfect for muscle repair and recovery.",
-    price: 5499,
-    originalPrice: 6999,
-    image: "/assets/whey_isolate.png",
-    images: ["/assets/whey_isolate.png", "/assets/shaker.png", "/assets/logo.png"],
-    stock: 12,
-    sold: 150,
-    isRunning: true,
-    weight: "2 kg",
-    servings: "60 Servings",
-    flavor: "Chocolate Flavour",
-    isVeg: true
-  },
-  {
-    id: "prod-pre-workout",
-    name: "Bajrangi Nutrition Pre-Workout",
-    category: "Pre-Workout",
-    description: "High-octane energy booster engineered for extreme energy, laser focus, and skin-splitting pumps. Contains L-Citrulline, Beta-Alanine, and Caffeine to fuel your heaviest workouts.",
-    price: 1899,
-    originalPrice: 2499,
-    image: "/assets/pre_workout.png",
-    images: ["/assets/pre_workout.png", "/assets/logo.png"],
-    stock: 8,
-    sold: 90,
-    isRunning: true,
-    weight: "300 g",
-    servings: "30 Servings",
-    flavor: "Fruit Punch",
-    isVeg: true
-  },
-  {
-    id: "prod-creatine",
-    name: "Bajrangi Nutrition Creatine Monohydrate",
-    category: "Creatine",
-    description: "100% pure micronized creatine monohydrate. Helps increase muscle strength, power output, and cognitive performance. Unflavoured for easy mixing with whey or pre-workout.",
-    price: 899,
-    originalPrice: 1299,
-    image: "/assets/creatine.png",
-    images: ["/assets/creatine.png", "/assets/logo.png"],
-    stock: 25,
-    sold: 240,
-    isRunning: true,
-    weight: "100 g",
-    servings: "33 Servings",
-    flavor: "Unflavoured",
-    isVeg: true
-  },
-  {
-    id: "prod-liver50",
-    name: "Bajrangi Liver-50 Protection",
-    category: "Vitamins",
-    description: "Advanced clinically-dosed liver detoxifier and shield formula. Contains milk thistle, dandelion root extract, and powerful antioxidants to cleanse your system and boost metabolic absorption.",
-    price: 999,
-    originalPrice: 1499,
-    image: "/assets/creatine.png", // reusing creatine layout shape
-    images: ["/assets/creatine.png", "/assets/logo.png"],
-    stock: 40,
-    sold: 80,
-    isRunning: true,
-    weight: "60 Tablets",
-    servings: "60 Servings",
-    flavor: "Unflavoured",
-    isVeg: true,
-    bundleDeal: {
-      buyQty: 2,
-      freeQty: 1,
-      label: "Buy 2 Get 1 Free on Liver-50"
-    }
-  },
-  {
-    id: "prod-shaker",
-    name: "Bajrangi Nutrition Classic Shaker",
-    category: "Accessories",
-    description: "Leak-proof shaker bottle with bajrangi branding. Features a durable blending ball, secure flip cap, and high quality BPA-free construction.",
-    price: 399,
-    originalPrice: 599,
-    image: "/assets/shaker.png",
-    images: ["/assets/shaker.png"],
-    stock: 50,
-    sold: 310,
-    isRunning: false,
-    weight: "700 ml",
-    servings: "N/A",
-    flavor: "Orange/Black",
-    isVeg: false
-  }
-];
+// Initial default catalog seeding fallback - Empty for manual entry
+export const DEFAULT_PRODUCTS: Product[] = [];
 
-export const DEFAULT_COUPONS: Coupon[] = [
-  { code: "BAJRANGI10", discount: 10, type: "percent" },
-  { code: "FITNESS500", discount: 500, type: "flat" }
-];
+export const DEFAULT_COUPONS: Coupon[] = [];
 
-export const DEFAULT_REVIEWS: Review[] = [
-  {
-    id: "rev-1",
-    productId: "prod-whey-isolate",
-    productName: "Bajrangi Nutrition Whey Isolate",
-    author: "Amit Kumar",
-    rating: 5,
-    text: "Awesome mixing and authentic flavor! Best whey isolate in Kurukshetra.",
-    approved: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: "rev-2",
-    productId: "prod-liver50",
-    productName: "Bajrangi Liver-50 Protection",
-    author: "Vikram Singh",
-    rating: 5,
-    text: "Used this during my heavy cycle, perfect liver values. Highly recommended!",
-    approved: true,
-    createdAt: new Date().toISOString()
-  }
-];
+export const DEFAULT_REVIEWS: Review[] = [];
 
 // DUAL-STATE DATABASE CONTROLLER SERVICE
 class DataService {
@@ -362,18 +275,11 @@ class DataService {
   }
 
   initLocalStorage() {
-    if (!localStorage.getItem("bajrangi_products")) {
-      localStorage.setItem("bajrangi_products", JSON.stringify(DEFAULT_PRODUCTS));
-    }
-    if (!localStorage.getItem("bajrangi_orders")) {
-      localStorage.setItem("bajrangi_orders", JSON.stringify([]));
-    }
-    if (!localStorage.getItem("bajrangi_coupons")) {
-      localStorage.setItem("bajrangi_coupons", JSON.stringify(DEFAULT_COUPONS));
-    }
-    if (!localStorage.getItem("bajrangi_reviews")) {
-      localStorage.setItem("bajrangi_reviews", JSON.stringify(DEFAULT_REVIEWS));
-    }
+    // Force clear sample data and start fresh
+    localStorage.setItem("bajrangi_products", JSON.stringify(DEFAULT_PRODUCTS));
+    localStorage.setItem("bajrangi_orders", JSON.stringify([]));
+    localStorage.setItem("bajrangi_coupons", JSON.stringify(DEFAULT_COUPONS));
+    localStorage.setItem("bajrangi_reviews", JSON.stringify(DEFAULT_REVIEWS));
     if (!localStorage.getItem("bajrangi_marquee")) {
       localStorage.setItem("bajrangi_marquee", "🚚 FREE SAME-DAY DOORSTEP DELIVERY IN KURUKSHETRA • 🛡️ 100% GENUINE PRODUCTS GUARANTEED");
     }
@@ -415,7 +321,36 @@ class DataService {
 
   subscribeOrders(callback: (orders: Order[]) => void) {
     if (this.isCloud && db) {
-      const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+      // Check if user is authenticated
+      const user = auth?.currentUser;
+      
+      let q;
+      if (user) {
+        // Check if user is admin
+        if (user.email === 'vanshikapahal16@gmail.com') {
+          // Admin can read all orders
+          q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+        } else {
+          // Customer can only read their own orders
+          q = query(
+            collection(db, "orders"),
+            where("customerId", "==", user.uid),
+            orderBy("createdAt", "desc")
+          );
+        }
+      } else {
+        // Not authenticated - use localStorage fallback
+        if (typeof window === "undefined") return () => {};
+        const load = () => {
+          const data = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
+          data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          callback(data);
+        };
+        load();
+        window.addEventListener("localOrdersChange", load);
+        return () => {};
+      }
+      
       return onSnapshot(q, (snapshot) => {
         const orders: Order[] = [];
         snapshot.forEach((doc) => {
@@ -424,6 +359,12 @@ class DataService {
         callback(orders);
       }, (error) => {
         console.error("Firestore orders read error:", error.code, error.message);
+        // Fallback to localStorage on error
+        if (typeof window !== "undefined") {
+          const data = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
+          data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          callback(data);
+        }
       });
     } else {
       if (typeof window === "undefined") return () => {};
@@ -471,13 +412,27 @@ class DataService {
 
   subscribeReviews(callback: (reviews: Review[]) => void) {
     if (this.isCloud && db) {
-      return onSnapshot(collection(db, "reviews"), (snapshot) => {
+      // Check if user is authenticated
+      const user = auth?.currentUser;
+      
+      let q;
+      if (user && user.email === 'vanshikapahal16@gmail.com') {
+        // Admin can read all reviews
+        q = query(collection(db, "reviews"));
+      } else {
+        // Public can only read approved reviews
+        q = query(collection(db, "reviews"), where("approved", "==", true));
+      }
+      
+      return onSnapshot(q, (snapshot) => {
         const reviews: Review[] = [];
         snapshot.forEach((doc) => {
           reviews.push({ id: doc.id, ...doc.data() } as Review);
         });
         callback(reviews);
-      }, () => {
+      }, (error) => {
+        console.error("Firestore reviews read error:", error.code, error.message);
+        // Fallback to localStorage on error
         this.subscribeLocalReviews(callback);
       });
     } else {
@@ -498,13 +453,15 @@ class DataService {
 
   subscribeMarquee(callback: (text: string) => void) {
     if (this.isCloud && db) {
-      return onSnapshot(doc(db, "settings", "marquee"), (snapshot) => {
+      return onSnapshot(doc(db, "marquee", "header-text"), (snapshot) => {
         if (snapshot.exists()) {
           callback(snapshot.data()?.text || "");
         } else {
           callback("🚚 FREE SAME-DAY DOORSTEP DELIVERY IN KURUKSHETRA • 🛡️ 100% GENUINE PRODUCTS GUARANTEED");
         }
-      }, () => {
+      }, (error) => {
+        console.error("Firestore marquee read error:", error.code, error.message);
+        // Fallback to localStorage on error
         this.subscribeLocalMarquee(callback);
       });
     } else {
@@ -526,7 +483,7 @@ class DataService {
   async saveMarquee(text: string) {
     if (!RateLimiter.checkAdminWrite().allowed) throw new Error("Rate limit exceeded.");
     if (this.isCloud && db) {
-      await setDoc(doc(db, "settings", "marquee"), { text });
+      await setDoc(doc(db, "marquee", "header-text"), { text });
     } else {
       localStorage.setItem("bajrangi_marquee", text);
       window.dispatchEvent(new Event("localMarqueeChange"));
@@ -691,64 +648,159 @@ class DataService {
     };
 
     if (this.isCloud && db) {
-      // 1. Log the order in orders collection
-      const docRef = await addDoc(collection(db, "orders"), orderData);
-      
-      // 2. Decrement stock/increment sold for items in firestore
-      for (const item of order.items) {
-        if (!item.isFree) {
-          await updateDoc(doc(db, "products", item.productId), {
-            stock: increment(-item.quantity),
-            sold: increment(item.quantity)
-          });
-        }
-      }
-      return docRef.id;
-    } else {
-      let orders = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
-      const newOrder = {
-        ...orderData,
-        id: "order-" + Date.now(),
-        createdAt: new Date().toISOString()
-      } as Order;
-      orders.push(newOrder);
-      localStorage.setItem("bajrangi_orders", JSON.stringify(orders));
+      try {
+        // 1. Log the order in orders collection
+        const docRef = await addDoc(collection(db, "orders"), orderData);
 
-      // Decrement Local stock
-      let products = JSON.parse(localStorage.getItem("bajrangi_products") || "[]");
-      for (const item of order.items) {
-        if (!item.isFree) {
-          products = products.map((p: Product) => {
-            if (p.id === item.productId) {
-              return {
-                ...p,
-                stock: Math.max(0, p.stock - item.quantity),
-                sold: p.sold + item.quantity
-              };
-            }
-            return p;
-          });
+        // 2. Decrement stock/increment sold for items in firestore
+        for (const item of order.items) {
+          if (!item.isFree) {
+            await updateDoc(doc(db, "products", item.productId), {
+              stock: increment(-item.quantity),
+              sold: increment(item.quantity)
+            });
+          }
         }
+        return docRef.id;
+      } catch (firebaseError: any) {
+        console.warn("Firebase write failed, falling back to localStorage:", firebaseError.message);
+        // Fall back to localStorage if Firebase write fails
+        return this.createOrderLocalStorage(orderData);
       }
-      localStorage.setItem("bajrangi_products", JSON.stringify(products));
-      
-      window.dispatchEvent(new Event("localDataChange"));
-      window.dispatchEvent(new Event("localOrdersChange"));
-      return newOrder.id;
+    } else {
+      return this.createOrderLocalStorage(orderData);
     }
   }
 
-  async updateOrderStatus(orderId: string, status: "Completed" | "Cancelled") {
+  private async createOrderLocalStorage(orderData: any) {
+    let orders = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
+    const newOrder = {
+      ...orderData,
+      id: "order-" + Date.now(),
+      createdAt: new Date().toISOString()
+    } as Order;
+    orders.push(newOrder);
+    localStorage.setItem("bajrangi_orders", JSON.stringify(orders));
+
+    // Decrement Local stock
+    let products = JSON.parse(localStorage.getItem("bajrangi_products") || "[]");
+    for (const item of orderData.items) {
+      if (!item.isFree) {
+        products = products.map((p: Product) => {
+          if (p.id === item.productId) {
+            return {
+              ...p,
+              stock: Math.max(0, p.stock - item.quantity),
+              sold: p.sold + item.quantity
+            };
+          }
+          return p;
+        });
+      }
+    }
+    localStorage.setItem("bajrangi_products", JSON.stringify(products));
+
+    window.dispatchEvent(new Event("localDataChange"));
+    window.dispatchEvent(new Event("localOrdersChange"));
+    return newOrder.id;
+  }
+
+  async updateOrderStatus(orderId: string, status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled", deliveryStatus?: string, trackingId?: string) {
+    if (!RateLimiter.checkAdminWrite().allowed) {
+      throw new Error("Rate limit exceeded.");
+    }
+    const updateData: any = { status, updatedAt: this.isCloud ? serverTimestamp() : new Date().toISOString() };
+    if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
+    if (trackingId) updateData.trackingId = trackingId;
+
+    if (this.isCloud && db) {
+      await updateDoc(doc(db, "orders", orderId), updateData);
+    } else {
+      let orders = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
+      orders = orders.map((o: Order) => o.id === orderId ? { ...o, ...updateData } : o);
+      localStorage.setItem("bajrangi_orders", JSON.stringify(orders));
+      window.dispatchEvent(new Event("localOrdersChange"));
+    }
+    RateLimiter.recordAdminWrite();
+  }
+
+  async getCustomerOrders(customerId: string): Promise<Order[]> {
+    if (this.isCloud && db) {
+      const q = query(collection(db, "orders"), where("customerId", "==", customerId));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Order));
+    } else {
+      let orders = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
+      return orders.filter((o: Order) => o.customerId === customerId);
+    }
+  }
+
+  async getCustomerData(customerId: string): Promise<Customer | null> {
+    if (this.isCloud && db) {
+      const customerRef = doc(db, "customers", customerId);
+      const customerDoc = await getDoc(customerRef);
+      if (customerDoc.exists()) {
+        return { id: customerDoc.id, ...customerDoc.data() } as Customer;
+      }
+      return null;
+    } else {
+      let customers = JSON.parse(localStorage.getItem("bajrangi_customers") || "[]");
+      return customers.find((c: Customer) => c.id === customerId) || null;
+    }
+  }
+
+  async saveCustomerAddress(customerId: string, address: SavedAddress) {
     if (!RateLimiter.checkAdminWrite().allowed) {
       throw new Error("Rate limit exceeded.");
     }
     if (this.isCloud && db) {
-      await updateDoc(doc(db, "orders", orderId), { status });
+      const customerRef = doc(db, "customers", customerId);
+      const customerDoc = await getDoc(customerRef);
+      if (customerDoc.exists()) {
+        const existingAddresses = customerDoc.data().addresses || [];
+        const updatedAddresses = address.isDefault
+          ? existingAddresses.map((a: any) => ({ ...a, isDefault: false }))
+          : existingAddresses;
+        updatedAddresses.push(address);
+        await updateDoc(customerRef, { addresses: updatedAddresses });
+      }
     } else {
-      let orders = JSON.parse(localStorage.getItem("bajrangi_orders") || "[]");
-      orders = orders.map((o: Order) => o.id === orderId ? { ...o, status } : o);
-      localStorage.setItem("bajrangi_orders", JSON.stringify(orders));
-      window.dispatchEvent(new Event("localOrdersChange"));
+      let customers = JSON.parse(localStorage.getItem("bajrangi_customers") || "[]");
+      const customerIndex = customers.findIndex((c: Customer) => c.id === customerId);
+      if (customerIndex >= 0) {
+        const existingAddresses = customers[customerIndex].addresses || [];
+        const updatedAddresses = address.isDefault
+          ? existingAddresses.map((a: any) => ({ ...a, isDefault: false }))
+          : existingAddresses;
+        updatedAddresses.push(address);
+        customers[customerIndex].addresses = updatedAddresses;
+        localStorage.setItem("bajrangi_customers", JSON.stringify(customers));
+      }
+    }
+    RateLimiter.recordAdminWrite();
+  }
+
+  async deleteCustomerAddress(customerId: string, addressId: string) {
+    if (!RateLimiter.checkAdminWrite().allowed) {
+      throw new Error("Rate limit exceeded.");
+    }
+    if (this.isCloud && db) {
+      const customerRef = doc(db, "customers", customerId);
+      const customerDoc = await getDoc(customerRef);
+      if (customerDoc.exists()) {
+        const existingAddresses = customerDoc.data().addresses || [];
+        const updatedAddresses = existingAddresses.filter((a: SavedAddress) => a.id !== addressId);
+        await updateDoc(customerRef, { addresses: updatedAddresses });
+      }
+    } else {
+      let customers = JSON.parse(localStorage.getItem("bajrangi_customers") || "[]");
+      const customerIndex = customers.findIndex((c: Customer) => c.id === customerId);
+      if (customerIndex >= 0) {
+        const existingAddresses = customers[customerIndex].addresses || [];
+        const updatedAddresses = existingAddresses.filter((a: SavedAddress) => a.id !== addressId);
+        customers[customerIndex].addresses = updatedAddresses;
+        localStorage.setItem("bajrangi_customers", JSON.stringify(customers));
+      }
     }
     RateLimiter.recordAdminWrite();
   }
@@ -821,22 +873,39 @@ class AuthService {
         }
       } catch (err: any) {
         console.error("Auth Fail Info:", err.code, err.message);
-        onError("Authentication failed. Google provider connection error.");
+
+        // Handle specific Firebase auth errors
+        if (err.code === "auth/popup-blocked") {
+          onError("Popup was blocked by browser. Please allow popups for this site or use offline mode.");
+        } else if (err.code === "auth/cancelled-popup-request") {
+          onError("Login was cancelled. Please try again.");
+        } else if (err.code === "auth/popup-closed-by-user") {
+          onError("Login popup was closed. Please try again.");
+        } else {
+          // For other errors, offer fallback to offline mode
+          onError(`Authentication failed (${err.code}). Using offline mode instead.`);
+          // Automatically fallback to offline mode
+          setTimeout(() => this.loginOffline(onSuccess, onError), 1000);
+        }
       }
     } else {
       // Offline mode mock login
-      const email = prompt("Enter Admin Gmail address for authentication testing:", process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',')[0] || "admin@example.com");
-      if (email === null) return;
-      if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
-        const mockUser = {
-          displayName: "Admin Vanshika",
-          email: email.toLowerCase().trim(),
-          photoURL: "https://lh3.googleusercontent.com/a/default-user=s96-c"
-        };
-        onSuccess(mockUser);
-      } else {
-        onError(`Access Denied: Only ${ADMIN_EMAILS.join(', ')} is authorized.`);
-      }
+      this.loginOffline(onSuccess, onError);
+    }
+  }
+
+  private loginOffline(onSuccess: (user: any) => void, onError: (msg: string) => void) {
+    const email = prompt("Enter Admin Gmail address for authentication testing:", process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',')[0] || "vanshikapahal16@gmail.com");
+    if (email === null) return;
+    if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
+      const mockUser = {
+        displayName: "Admin Vanshika",
+        email: email.toLowerCase().trim(),
+        photoURL: "https://lh3.googleusercontent.com/a/default-user=s96-c"
+      };
+      onSuccess(mockUser);
+    } else {
+      onError(`Access Denied: Only ${ADMIN_EMAILS.join(', ')} is authorized.`);
     }
   }
 
@@ -867,3 +936,115 @@ class AuthService {
 }
 
 export const authService = new AuthService();
+
+// Customer Authentication Service (separate from admin)
+class CustomerAuthService {
+  isCloud = isFirebaseConfigured;
+  currentUser: any = null;
+  authUnsubscribe: any = null;
+
+  // Initialize auth state listener
+  initializeAuthState(onStateChanged?: (user: any) => void) {
+    if (this.isCloud && auth) {
+      this.authUnsubscribe = onAuthStateChanged(auth, (user) => {
+        this.currentUser = user;
+        if (onStateChanged) {
+          onStateChanged(user);
+        }
+      });
+    }
+  }
+
+  // Clean up auth listener
+  cleanupAuthState() {
+    if (this.authUnsubscribe) {
+      this.authUnsubscribe();
+      this.authUnsubscribe = null;
+    }
+  }
+
+  async login(onSuccess: (user: any) => void, onError: (msg: string) => void) {
+    if (this.isCloud && auth && googleProvider) {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        this.currentUser = result.user;
+
+        // Save customer profile to database
+        await this.saveCustomerProfile(result.user);
+
+        onSuccess(result.user);
+      } catch (err: any) {
+        console.error("Customer Auth Fail:", err.code, err.message);
+
+        if (err.code === "auth/popup-blocked") {
+          onError("Popup was blocked by browser. Please allow popups for this site.");
+        } else if (err.code === "auth/cancelled-popup-request") {
+          onError("Login was cancelled. Please try again.");
+        } else {
+          onError(`Authentication failed: ${err.message}`);
+        }
+      }
+    } else {
+      // Offline mode for customers
+      const email = prompt("Enter your email for guest checkout:", "");
+      if (email === null) return;
+      const mockUser = {
+        displayName: "Guest User",
+        email: email,
+        photoURL: "https://lh3.googleusercontent.com/a/default-user=s96-c",
+        uid: "guest-" + Date.now()
+      };
+      this.currentUser = mockUser;
+      onSuccess(mockUser);
+    }
+  }
+
+  private async saveCustomerProfile(user: any) {
+    if (!this.isCloud || !db) return;
+
+    const customerRef = doc(db, "customers", user.uid);
+    const customerData = {
+      id: user.uid,
+      email: user.email,
+      displayName: user.displayName || user.email?.split("@")[0],
+      photoURL: user.photoURL,
+      addresses: [],
+      createdAt: serverTimestamp()
+    };
+
+    await setDoc(customerRef, customerData, { merge: true });
+  }
+
+  async logout(onSuccess: () => void, onError: (msg: string) => void) {
+    try {
+      if (this.isCloud && auth) {
+        await signOut(auth);
+      }
+      this.currentUser = null;
+      onSuccess();
+    } catch (err: any) {
+      console.error("Logout error:", err.message);
+      onError("An error occurred during logout.");
+    }
+  }
+
+  checkAuthState(onStateChanged: (user: any) => void) {
+    if (this.isCloud && auth) {
+      return onAuthStateChanged(auth, (user) => {
+        this.currentUser = user;
+        onStateChanged(user);
+      });
+    }
+    return () => {};
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.currentUser;
+  }
+
+  getCurrentUser(): any {
+    return this.currentUser;
+  }
+}
+
+export const customerAuthService = new CustomerAuthService();

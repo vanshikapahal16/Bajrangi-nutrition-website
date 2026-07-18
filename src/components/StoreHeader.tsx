@@ -6,7 +6,8 @@ import {
   Heart,
   ShoppingBag,
   Menu,
-  X
+  X,
+  User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -18,6 +19,7 @@ interface StoreHeaderProps {
   onOpenCart: () => void;
   onOpenWishlist: () => void;
   onOpenAdmin: () => void;
+  onOpenMyAccount: () => void;
   isClient: boolean;
 }
 
@@ -38,6 +40,7 @@ export default function StoreHeader({
   onOpenCart,
   onOpenWishlist,
   onOpenAdmin,
+  onOpenMyAccount,
   isClient,
 }: StoreHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -140,6 +143,15 @@ export default function StoreHeader({
                 title="Admin Panel"
               >
                 ADMIN
+              </button>
+
+              {/* My Account Button - Glass Circle */}
+              <button
+                onClick={onOpenMyAccount}
+                className="relative w-9 h-9 rounded-full border border-gray-150 bg-white/70 hover:bg-white hover:border-primary/50 flex items-center justify-center text-text-muted hover:text-primary hover:shadow-[0_4px_12px_rgba(242,106,33,0.08)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                title="My Account"
+              >
+                <User className="w-3.5 h-3.5" />
               </button>
 
               {/* Wishlist Icon - Glass Circle */}

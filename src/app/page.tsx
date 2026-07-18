@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  MapPin, 
-  Clock, 
-  Phone, 
-  Instagram, 
+import { motion } from "framer-motion";
+import {
+  MapPin,
+  Clock,
+  Phone,
+  Instagram,
   Facebook,
   Youtube,
-  MessageSquare
+  MessageSquare,
+  ShoppingBag
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,9 +25,11 @@ import WhyBajrangi from "../components/WhyBajrangi";
 import ProductCatalog from "../components/ProductCatalog";
 import CartDrawer from "../components/CartDrawer";
 import AdminPortal from "../components/AdminPortal";
+import FloatingSocialIcons from "../components/FloatingSocialIcons";
+import MyAccount from "../components/MyAccount";
 import { CartItem, Product, dataService } from "../lib/services";
 
-const WHATSAPP_NUMBER = "919588715527";
+const WHATSAPP_NUMBER = "91996067101";
 
 interface ToastMessage {
   id: string;
@@ -40,6 +44,7 @@ export default function Storefront() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartDefaultMode, setCartDefaultMode] = useState<"cart" | "wishlist">("cart");
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isMyAccountOpen, setIsMyAccountOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -223,6 +228,7 @@ export default function Storefront() {
           setIsCartOpen(true);
         }}
         onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenMyAccount={() => setIsMyAccountOpen(true)}
         isClient={isClient}
       />
       <HeroSection />
@@ -300,16 +306,27 @@ export default function Storefront() {
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0"><MapPin className="w-5 h-5" /></div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Store Address</h4>
-                  <p className="text-text-muted text-xs mt-1 font-medium">Bajrangi Nutrition, Pipili Road, Opp. Near New Bus Stand, Kurukshetra, Haryana - 136119</p>
+                  <p className="text-text-muted text-xs mt-1 font-medium">Divine City Centre, Opposite to New Bus Stand, Kurukshetra, Haryana - 136119</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0"><Phone className="w-5 h-5" /></div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">WhatsApp Direct Phone</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">WhatsApp & Call</h4>
                   <p className="text-text-muted text-xs mt-1 font-medium">+91 95887-15527 | +91 99960-67101</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm shrink-0">
+                  <Instagram className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-main">Instagram</h4>
+                  <p className="text-text-muted text-xs mt-1 font-medium">@bajrangi_nutrition_kurukshetra</p>
+                </div>
+              </div>
                 </div>
               </div>
 
@@ -329,14 +346,29 @@ export default function Storefront() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="h-[380px] rounded-3xl overflow-hidden shadow-lg border border-gray-150 relative group"
+            className="h-[380px] rounded-3xl overflow-hidden shadow-lg border border-gray-150 relative group cursor-pointer"
           >
-            <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13791.642533036495!2d76.81268393529237!3d29.967664875323573!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390e3f4251df83df%3A0x6e902cf697b0032b!2sKurukshetra%20University!5e0!3m2!1sen!2sin!4v1721020000000!5m2!1sen!2sin" 
-              className="w-full h-full border-none filter grayscale contrast-110 saturate-50 transition-transform duration-700 group-hover:scale-105"
-              allowFullScreen
-              loading="lazy"
-            />
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Divine+City+Centre,+Opposite+to+New+Bus+Stand,+Kurukshetra,+Haryana"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full h-full"
+            >
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3470.123456789!2d76.8126839!3d29.9676649!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1sDivine+City+Centre!2sKurukshetra!5e0!3m2!1sen!2sin"
+                className="w-full h-full border-none filter grayscale contrast-110 saturate-50 group-hover:scale-105 group-hover:grayscale-0 group-hover:contrast-100 group-hover:saturate-100 transition-all duration-700"
+                allowFullScreen
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
+                <div className="bg-white px-4 py-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                  <span className="text-xs font-bold text-text-main flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Open in Google Maps
+                  </span>
+                </div>
+              </div>
+            </a>
           </motion.div>
         </div>
       </section>
@@ -386,11 +418,7 @@ export default function Storefront() {
 
         <div className="max-w-7xl mx-auto px-6 pt-10 flex flex-col sm:flex-row justify-between items-center gap-6 relative z-10">
           <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider">&copy; 2026 Bajrangi Nutrition Kurukshetra. 100% Authentic Seals Verified.</p>
-          <div className="flex gap-4">
-            <a href="https://instagram.com" target="_blank" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Instagram className="w-4 h-4" /></a>
-            <a href="https://facebook.com" target="_blank" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Facebook className="w-4 h-4" /></a>
-            <a href="https://youtube.com" target="_blank" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Youtube className="w-4 h-4" /></a>
-          </div>
+            <a href="https://www.instagram.com/bajrangi_nutrition_kurukshetra/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/35 bg-neutral-950 transition-all"><Instagram className="w-4 h-4" /></a>
         </div>
       </footer>
 
@@ -410,22 +438,38 @@ export default function Storefront() {
         defaultMode={cartDefaultMode}
       />
 
-      <AdminPortal 
+      <AdminPortal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         showToast={triggerToast}
       />
 
-      {/* Floating Web-Consult assistant badge (bottom left) */}
-      <a 
-        href={`https://wa.me/${WHATSAPP_NUMBER}`}
-        target="_blank"
-        className="fixed bottom-6 left-6 z-30 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
-        title="WhatsApp Chat"
-      >
-        <MessageSquare className="w-6 h-6" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 font-bold text-xs uppercase tracking-wider whitespace-nowrap">Chat on WhatsApp</span>
-      </a>
+      <MyAccount
+        isOpen={isMyAccountOpen}
+        onClose={() => setIsMyAccountOpen(false)}
+        showToast={triggerToast}
+      />
+
+      {/* Floating Social Media Icons */}
+      <FloatingSocialIcons />
+
+      {/* Floating Cart Button - Shows when cart has items */}
+      {cart.length > 0 && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-6 left-6 z-40 bg-primary hover:bg-primary-hover text-white rounded-full px-5 py-3 shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
+          title="Open Cart"
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span className="text-xs font-bold uppercase tracking-wider">Cart</span>
+          <span className="bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            {cart.length}
+          </span>
+        </motion.button>
+      )}
 
       {/* Custom Toast Alerts Renderer */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2.5">
