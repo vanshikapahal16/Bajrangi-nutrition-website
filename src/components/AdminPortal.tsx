@@ -33,6 +33,7 @@ type TabType = "dashboard" | "inventory" | "form" | "orders" | "coupons" | "revi
 export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalProps) {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+  const [passkey, setPasskey] = useState("");
   
   // Data lists
   const [products, setProducts] = useState<Product[]>([]);
@@ -101,10 +102,17 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
   if (!isOpen) return null;
 
   // Login handler
-  const handleLogin = () => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passkey.trim()) {
+      showToast("Please enter a passkey.", "warning");
+      return;
+    }
     authService.login(
+      passkey.trim(),
       (authUser) => {
         setUser(authUser);
+        setPasskey("");
         showToast(`Welcome back, ${authUser.displayName || "Owner"}!`, "success");
       },
       (errorMsg) => {
@@ -489,16 +497,29 @@ export default function AdminPortal({ isOpen, onClose, showToast }: AdminPortalP
               <Lock className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold tracking-tight mb-2">Restricted Access</h3>
-            <p className="text-text-muted text-xs leading-relaxed mb-8">
-              Gmail login authentication required. Gated strictly to vanshikapahal16@gmail.com.
+            <p className="text-text-muted text-xs leading-relaxed mb-6">
+              Owner passkey verification required to access inventory and checkout databases.
             </p>
             
-            <button 
-              onClick={handleLogin}
-              className="w-full bg-white hover:bg-gray-50 border border-gray-200 text-text-main font-bold py-3.5 rounded-xl flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-all text-xs uppercase tracking-wider"
-            >
-              <i className="fab fa-google text-red-500 text-base"></i> Sign in with Google
-            </button>
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Passkey *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••"
+                  value={passkey}
+                  onChange={(e) => setPasskey(e.target.value)}
+                  className="bg-bg-light border border-gray-250 rounded-xl px-4 py-3 text-center text-sm font-bold tracking-widest text-text-main outline-none focus:border-primary transition-all w-full"
+                />
+              </div>
+              <button 
+                type="submit"
+                className="w-full bg-primary hover:bg-primary-hover border border-primary text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all text-xs uppercase tracking-wider cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" /> Unlock Dashboard
+              </button>
+            </form>
           </div>
         </div>
       ) : (

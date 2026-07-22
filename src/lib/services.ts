@@ -871,11 +871,76 @@ class DataService {
 
 export const dataService = new DataService();
 
-// Google Authentication Service Wrapper
+// Client-Side Mock JWT Provider for Passkey Auth
+class MockJWT {
+  private static SECRET = "bajrangi-nutrition-jwt-secret-123456";
+
+  static sign(payload: any): string {
+    const header = { alg: "HS256", typ: "JWT" };
+    const encodedHeader = btoa(JSON.stringify(header)).replace(/=+$/, "");
+    const encodedPayload = btoa(JSON.stringify(payload)).replace(/=+$/, "");
+    const signatureInput = `${encodedHeader}.${encodedPayload}`;
+    const signature = btoa(signatureInput + this.SECRET).replace(/=+$/, "");
+    return `${signatureInput}.${signature}`;
+  }
+
+  static verify(token: string): any {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      const [encodedHeader, encodedPayload, signature] = parts;
+      const expectedSignature = btoa(`${encodedHeader}.${encodedPayload}` + this.SECRET).replace(/=+$/, "");
+      if (signature !== expectedSignature) return null;
+      
+      const payload = JSON.parse(atob(encodedPayload));
+      if (payload.exp && Date.now() > payload.exp) {
+        return null;
+      }
+      return payload;
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+// Passkey & JWT Authentication Service
 class AuthService {
   isCloud = isFirebaseConfigured;
+  private listeners: ((user: any) => void)[] = [];
 
-  async login(onSuccess: (user: any) => void, onError: (msg: string) => void) {
+  constructor() {
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", (e) => {
+        if (e.key === "admin_jwt") {
+          this.triggerStateChange();
+        }
+      });
+    }
+  }
+
+  private triggerStateChange() {
+    const user = this.getCurrentUser();
+    this.listeners.forEach((l) => l(user));
+  }
+
+  getCurrentUser() {
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem("admin_jwt");
+    if (!token) return null;
+    
+    const payload = MockJWT.verify(token);
+    if (!payload) {
+      localStorage.removeItem("admin_jwt");
+      return null;
+    }
+    return {
+      displayName: payload.name || "Owner Admin",
+      email: payload.email || "vanshikapahal16@gmail.com",
+      photoURL: "/assets/logo.png"
+    };
+  }
+
+  async login(passkey: string, onSuccess: (user: any) => void, onError: (msg: string) => void) {
     const limit = RateLimiter.checkAuth();
     if (!limit.allowed) {
       const waitTime = Math.ceil(limit.delay / 1000) || 10;
@@ -884,60 +949,49 @@ class AuthService {
     }
     RateLimiter.recordAuthAttempt();
 
-    if (this.isCloud && auth && googleProvider) {
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const email = result.user?.email || "";
-        if (ADMIN_EMAILS.includes(email)) {
-          onSuccess(result.user);
-        } else {
-          await signOut(auth);
-          onError("Access Denied: Your Google account is not authorized.");
-        }
-      } catch (err: any) {
-        console.error("Auth Fail Info:", err.code, err.message);
+    if (passkey !== "123456") {
+      onError("Access Denied: Invalid Admin Passkey.");
+      return;
+    }
 
-        // Handle specific Firebase auth errors
-        if (err.code === "auth/popup-blocked") {
-          onError("Popup was blocked by browser. Please allow popups for this site or use offline mode.");
-        } else if (err.code === "auth/cancelled-popup-request") {
-          onError("Login was cancelled. Please try again.");
-        } else if (err.code === "auth/popup-closed-by-user") {
-          onError("Login popup was closed. Please try again.");
-        } else {
-          // For other errors, offer fallback to offline mode
-          onError(`Authentication failed (${err.code}). Using offline mode instead.`);
-          // Automatically fallback to offline mode
-          setTimeout(() => this.loginOffline(onSuccess, onError), 1000);
-        }
+    // Generate local JWT token to keep admin signed in on refresh
+    const payload = {
+      email: "vanshikapahal16@gmail.com",
+      name: "Owner Admin",
+      role: "admin",
+      exp: Date.now() + 24 * 60 * 60 * 1000 // 24 Hours
+    };
+    const token = MockJWT.sign(payload);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("admin_jwt", token);
+    }
+
+    if (this.isCloud && auth) {
+      try {
+        const { signInWithEmailAndPassword } = await import("firebase/auth");
+        const result = await signInWithEmailAndPassword(auth, "vanshikapahal16@gmail.com", "123456");
+        onSuccess(result.user);
+      } catch (err: any) {
+        console.warn("Firebase Auth fallback active:", err.code, err.message);
+        // Fallback: authorize locally even if Firebase accounts are not set up yet
+        onSuccess(this.getCurrentUser());
       }
     } else {
-      // Offline mode mock login
-      this.loginOffline(onSuccess, onError);
+      onSuccess(this.getCurrentUser());
     }
-  }
-
-  private loginOffline(onSuccess: (user: any) => void, onError: (msg: string) => void) {
-    const email = prompt("Enter Admin Gmail address for authentication testing:", process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',')[0] || "vanshikapahal16@gmail.com");
-    if (email === null) return;
-    if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
-      const mockUser = {
-        displayName: "Admin Vanshika",
-        email: email.toLowerCase().trim(),
-        photoURL: "https://lh3.googleusercontent.com/a/default-user=s96-c"
-      };
-      onSuccess(mockUser);
-    } else {
-      onError(`Access Denied: Only ${ADMIN_EMAILS.join(', ')} is authorized.`);
-    }
+    this.triggerStateChange();
   }
 
   async logout(onSuccess: () => void, onError: (msg: string) => void) {
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("admin_jwt");
+      }
       if (this.isCloud && auth) {
         await signOut(auth);
       }
       onSuccess();
+      this.triggerStateChange();
     } catch (err: any) {
       console.error("Logout error:", err.message);
       onError("An error occurred during logout.");
@@ -945,16 +999,29 @@ class AuthService {
   }
 
   checkAuthState(onStateChanged: (user: any) => void) {
+    this.listeners.push(onStateChanged);
+    
+    // Check initial state
+    const user = this.getCurrentUser();
+    onStateChanged(user);
+
+    let unsubAuth = () => {};
     if (this.isCloud && auth) {
-      return onAuthStateChanged(auth, (user) => {
-        if (user && ADMIN_EMAILS.includes(user.email || "")) {
-          onStateChanged(user);
+      unsubAuth = onAuthStateChanged(auth, (authUser) => {
+        if (authUser && ADMIN_EMAILS.includes(authUser.email || "")) {
+          onStateChanged(authUser);
         } else {
-          onStateChanged(null);
+          // If Firebase has no user but local JWT is valid, keep user
+          const localUser = this.getCurrentUser();
+          onStateChanged(localUser);
         }
       });
     }
-    return () => {};
+
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== onStateChanged);
+      unsubAuth();
+    };
   }
 }
 
